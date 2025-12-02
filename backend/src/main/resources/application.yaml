@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: trackingnes-app
+  # Configuración de la Base de Datos
+  datasource:
+    url: jdbc:mysql://localhost:3306/mesabd_rastreabilidade_spring?serverTimezone=UTC&useSSL=true
+    username: trackingnes_user                             
+    password: mesacerPass.2025                        
+    driverClassName: com.mysql.cj.jdbc.Driver
+  
+  # Configuración de JPA/Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: validate  
+    show-sql: true     
+    properties:               
+      hibernate:             
+        '[hibernate.format_sql]': true  
+
+server:
+  port: 8080 
+
+jwt:
+  secret: N1DV4fjxISpoZUMg0EWdWvH8p5butUZmDZYmbFZZ1EVOYNmtrzBxc5oVUlPmpNia
