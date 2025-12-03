@@ -2,7 +2,8 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import AppLayout from '@/layout/AppLayout.vue'; // La ruta a tu layout de Sakai
+import Toast from 'primevue/toast';
+import AppLayout from '@/layout/AppLayout.vue'; 
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -17,11 +18,13 @@ const requiresAppLayout = computed(() => {
     <div>
         <template v-if="requiresAppLayout">
             <AppLayout>
+                <Toast position="top-right" />
                 <RouterView />
             </AppLayout>
         </template>
 
         <template v-else>
+            <Toast position="top-right" />
             <RouterView />
         </template>
     </div>

@@ -2,8 +2,6 @@
 import { onMounted } from 'vue';
 import { useTrackingPrensasStore } from '@/stores/trackingPrensasStore';
 
-// PrimeVue imports
-// Ya no necesitamos DataTable ni Column, solo los básicos:
 import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
 import Tag from 'primevue/tag'; // Útil para mostrar la cantidad
@@ -11,7 +9,7 @@ import Tag from 'primevue/tag'; // Útil para mostrar la cantidad
 const store = useTrackingPrensasStore();
 
 onMounted(() => {
-    store.fetchAll(); // cargar registros al montar
+    store.fetchAll({ page: 0, size: 10, sort: 'startTime,desc' }); // cargar registros al montar
 });
 
 /**
@@ -44,8 +42,8 @@ const formatDateTime = (dateString) => {
             <p class="mt-3 text-surface-600 dark:text-surface-400">A carregar registos...</p>
         </div>
 
-        <div v-else-if="store.error">
-            <Message severity="error">{{ store.error }}</Message>
+        <div v-else-if="store.fetchError">
+            <Message severity="error">{{ store.fetchError }}</Message>
         </div>
 
         <div v-else class="flex flex-col gap-4 max-h-[80vh] overflow-y-auto pr-2">
@@ -58,35 +56,28 @@ const formatDateTime = (dateString) => {
                         <i class="pi pi-pallet text-3xl text-primary-600 dark:text-primary-400 mt-1"></i>
 
                         <div class="flex flex-col">
-                            <p class="font-semibold text-surface-900 dark:text-surface-0 leading-tight">
-                                <i class="pi pi-database" style="font-size: 1.1rem"></i>
+                            <div class="font-semibold text-surface-900 dark:text-surface-0 leading-tight mb-3">
                                 Carro #{{ item.logisticUnit }}
-                            </p>
+                                <Tag :value="`${item.quantity} Un.`" severity="success" class="text-sm font-bold p-2 ml-6">
+                                </Tag>
+
+                            </div>
                             <span class="text-sm text-surface-600 dark:text-surface-300">
-                                {{ item.productDescription || 'Produto Desconhecido' }}
+                                <i class="pi pi-bullseye mr-1"></i> {{ item.productDescription || 'Produto Desconhecido' }}
                             </span>
 
                             <span class="text-xs text-surface-400 dark:text-surface-500 mt-2">
                                 <i class="pi pi-calendar mr-1"></i> {{ formatDateTime(item.startTime) }}
                             </span>
                             <span class="text-xs text-surface-400 dark:text-surface-500 mt-2">
-                                <i class="pi pi-microchip mr-1"></i> {{ item.equipmentDescription }}
+                                <i class="pi pi-chart-scatter mr-1"></i> {{ item.equipmentDescription }}
                             </span>
                         </div>
                     </div>
-
-                    <div class="flex flex-col items-end min-w-[70px]">
-                        <Tag :value="`${item.quantity} Un.`" severity="success" class="text-sm font-bold p-2"></Tag>
-
-                        <span v-if="item.rawMaterialLot" class="text-xs text-surface-500 dark:text-surface-400 mt-2">
-                            Lote: {{ item.rawMaterialLot }}
-                        </span>
-                    </div>
                 </div>
 
-                <p v-if="item.comments"
-                    class="text-xs italic text-surface-500 dark:text-surface-400 mt-3 border-t border-surface-100 dark:border-surface-700 pt-2 line-clamp-2">
-                    **Equipa:** {{ item.teamDescription }}  ({{item.teamSectionDescription}})
+                <p class="text-xs italic text-surface-500 dark:text-surface-400 mt-3 border-t border-surface-100 dark:border-surface-700 pt-2 line-clamp-2">
+                    **Equipa:** {{ item.teamDescription }} ({{ item.teamSectionDescription }})
                 </p>
 
             </div>

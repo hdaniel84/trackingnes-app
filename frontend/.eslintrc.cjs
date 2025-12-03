@@ -18,6 +18,7 @@ module.exports = {
         // Reglas útiles pero no molestas
         'vue/multi-word-component-names': 'off',
         'vue/no-reserved-component-names': 'off',
+        'vue/no-v-model-argument': 'off',
 
         // Si quieres quitar esta también, dime
         'vue/component-tags-order': [

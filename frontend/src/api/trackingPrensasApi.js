@@ -1,7 +1,7 @@
 import http from './http'; 
 
 const TrackingPrensasService = {
-  getAll: () => http.get('/tracking-prensas'),
+  getAll: (params) => http.get('/tracking-prensas', { params }),
   getById: (id) => http.get(`/tracking-prensas/${id}`),
   create: (data) => http.post('/tracking-prensas', data),
   update: (id, data) => http.put(`/tracking-prensas/${id}`, data),

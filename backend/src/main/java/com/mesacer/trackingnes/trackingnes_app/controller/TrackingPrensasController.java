@@ -2,11 +2,17 @@ package com.mesacer.trackingnes.trackingnes_app.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingPrensasDTO;
 import com.mesacer.trackingnes.trackingnes_app.service.TrackingPrensasService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/tracking-prensas")
@@ -19,8 +25,14 @@ public class TrackingPrensasController {
     }
 
     @GetMapping
-    public List<TrackingPrensasDTO> getAll() {
-        return service.findAll();
+    public ResponseEntity<List<TrackingPrensasDTO>> getAll(
+            @PageableDefault(sort = "startTime", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<TrackingPrensasDTO> page = service.findAll(pageable);
+
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(page.getTotalElements()))
+                .header("X-Total-Pages", String.valueOf(page.getTotalPages()))
+                .body(page.getContent());
     }
 
     @GetMapping("/{id}")
@@ -30,7 +42,7 @@ public class TrackingPrensasController {
     }
 
     @PostMapping
-    public TrackingPrensasDTO create(@RequestBody TrackingPrensasDTO dto) {
+    public TrackingPrensasDTO create(@Valid @RequestBody TrackingPrensasDTO dto) {
         return service.save(dto);
     }
 

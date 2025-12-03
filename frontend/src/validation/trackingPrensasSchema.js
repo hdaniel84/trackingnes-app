@@ -7,6 +7,12 @@ export const trackingPrensasSchema = z.object({
       message: 'Unidade logística é obrigatória'
     }),
 
+  quantity: z
+    .any()
+    .refine(val => val !== null && val !== undefined, {
+      message: 'Quantidade é obrigatória'
+    }),
+
   lote: z
     .string()
     .min(1, { message: 'Lote é obrigatório' }),

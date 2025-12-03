@@ -13,6 +13,8 @@ import { useAuthStore } from './stores/auth';
 
 import '@/assets/tailwind.css';
 import '@/assets/styles.scss';
+import { updatePrimaryPalette, palette } from '@primeuix/themes';
+
 
 const app = createApp(App);
 
@@ -22,13 +24,15 @@ app.use(PrimeVue, {
   theme: {
     preset: Aura,
     options: {
-      darkModeSelector: '.app-dark',
-      primary: 'blue'
+      darkModeSelector: '.app-dark'
     }
   }
 });
 app.use(ToastService);
 app.use(ConfirmationService);
+
+
+updatePrimaryPalette(palette('#203b92ff'));
 
 // Guard de rutas
 router.beforeEach((to, from, next) => {

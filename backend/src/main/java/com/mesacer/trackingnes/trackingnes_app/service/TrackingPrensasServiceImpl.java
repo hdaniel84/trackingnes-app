@@ -2,6 +2,8 @@ package com.mesacer.trackingnes.trackingnes_app.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingPrensasDTO;
@@ -26,6 +28,12 @@ public class TrackingPrensasServiceImpl implements TrackingPrensasService {
                 .stream()
                 .map(mapper::toDTO)
                 .toList();
+    }
+
+    @Override
+    public Page<TrackingPrensasDTO> findAll(Pageable pageable) {
+        return repository.findAll(pageable)
+                .map(mapper::toDTO);
     }
 
     @Override

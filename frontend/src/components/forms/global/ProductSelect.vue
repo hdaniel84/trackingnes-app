@@ -46,8 +46,7 @@ onMounted(() => {
     <div v-else class="p-field">
       <span class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Artigo</span>
       <Select inputId="productSelect" id="product" class="mt-2" v-model="selectedProduct" :options="productStore.items"
-        optionLabel="description" placeholder="Seleciona produto" filter
-        :class="{ 'p-invalid': !selectedProduct && !productStore.loading }" />
+        optionLabel="description" placeholder="Seleciona" filter />
 
     </div>
   </div>

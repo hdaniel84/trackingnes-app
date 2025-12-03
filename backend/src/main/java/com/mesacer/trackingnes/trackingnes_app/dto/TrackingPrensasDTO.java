@@ -35,11 +35,11 @@ public class TrackingPrensasDTO {
     private Long productId;
     private String productDescription;
 
-    @NotBlank
+    @NotNull
     @Min(value = 0, message = "Campo não válido")
     private Integer quantity;
 
-    @NotBlank
+    @NotNull
     @Min(value = 0, message = "Campo não válido")
     private Integer logisticUnit;
     private String comments;

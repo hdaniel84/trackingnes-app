@@ -7,23 +7,28 @@ export const useTrackingPrensasStore = defineStore('trackingPrensas', {
     items: [],        // lista de registros
     current: null,    // registro seleccionado
     loading: false,
-    error: null
+    error: null,
+    fetchError: null,
+    totalItems: 0
   }),
 
   actions: {
     // Obtener todos los registros
-    async fetchAll() {
+    // Default values
+    async fetchAll({ page = 0, size = 20, sort = 'startTime,desc' } = {}) {
       this.loading = true;
-      this.error = null;
+      this.fetchError = null;
       try {
-        const response = await TrackingPrensasService.getAll();
+        const response = await TrackingPrensasService.getAll({ page, size, sort });
         this.items = response.data;
+        this.totalItems = response.data.length;
       } catch (err) {
-        this.error = 'No se pudieron cargar los registros';
+        this.fetchError = 'Não foi possível carregar os registos.';
       } finally {
         this.loading = false;
       }
     },
+
 
     // Obtener un registro por ID
     async fetchById(id) {
@@ -33,7 +38,7 @@ export const useTrackingPrensasStore = defineStore('trackingPrensas', {
         const response = await TrackingPrensasService.getById(id);
         this.current = response.data;
       } catch (err) {
-        this.error = `No se pudo cargar el registro con id ${id}`;
+        this.error = `Não foi possível carregar o registo com o ID ${id}`;
       } finally {
         this.loading = false;
       }
@@ -45,10 +50,10 @@ export const useTrackingPrensasStore = defineStore('trackingPrensas', {
       this.error = null;
       try {
         const response = await TrackingPrensasService.create(data);
-        this.items.push(response.data); // añadir al listado
+        await this.fetchAll({ page: 0, size: 10, sort: 'startTime,desc' });
         return response.data;
       } catch (err) {
-        this.error = 'No se pudo crear el registro';
+        this.error = 'Não foi possível criar o registo.';
         throw err;
       } finally {
         this.loading = false;
@@ -67,7 +72,7 @@ export const useTrackingPrensasStore = defineStore('trackingPrensas', {
         }
         return response.data;
       } catch (err) {
-        this.error = `No se pudo actualizar el registro con id ${id}`;
+        this.error = `Não foi possível atualizar o registo com o ID ${id}`;
         throw err;
       } finally {
         this.loading = false;
@@ -82,7 +87,7 @@ export const useTrackingPrensasStore = defineStore('trackingPrensas', {
         await TrackingPrensasService.remove(id);
         this.items = this.items.filter(item => item.id !== id);
       } catch (err) {
-        this.error = `No se pudo eliminar el registro con id ${id}`;
+        this.error = `O registo não pôde ser eliminado. ID ${id}`;
         throw err;
       } finally {
         this.loading = false;

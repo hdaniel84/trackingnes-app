@@ -66,4 +66,8 @@ public class User implements UserDetails {
 
     @Column
     private boolean enabled;
+
+    @OneToOne
+    @JoinColumn(name = "id_person", nullable = false)
+    private Person person;
 }

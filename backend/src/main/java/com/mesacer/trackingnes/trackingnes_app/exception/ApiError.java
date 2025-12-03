@@ -1,10 +1,14 @@
 package com.mesacer.trackingnes.trackingnes_app.exception;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import java.time.LocalDateTime;
 
-public record ApiError(
-        int status,
-        String message,
-        String path,
-        LocalDateTime timestamp
-) {}
+@Data
+@AllArgsConstructor
+public class ApiError {
+    private int status;
+    private String message;
+    private String detail;
+    private LocalDateTime timestamp;
+}

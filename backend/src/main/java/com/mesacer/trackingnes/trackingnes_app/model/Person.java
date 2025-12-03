@@ -23,8 +23,4 @@ public class Person {
 
     @Column(name = "lastname", length = 45)
     private String lastname;
-
-    @ManyToOne
-    @JoinColumn(name = "id_user", nullable = false)
-    private User user;
 }

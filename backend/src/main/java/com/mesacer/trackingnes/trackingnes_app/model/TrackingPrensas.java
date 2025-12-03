@@ -5,11 +5,16 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 @Entity
 @Table(name = "tracking_prensas")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class TrackingPrensas {
 
     @Id
@@ -51,12 +56,15 @@ public class TrackingPrensas {
     @JoinColumn(name = "id_equipment", nullable = false)
     private Equipment equipment;
 
+    @Column(name = "end_time")
+    private LocalDateTime endTime;
+
+    @CreatedDate
     @Column(name = "created_time")
     private LocalDateTime createdTime;
 
+    @CreatedBy
     @Column(name = "id_created_user")
     private Long createdUserId;
 
-    @Column(name = "end_time")
-    private LocalDateTime endTime;
 }

@@ -1,15 +1,14 @@
-// src/api/http.js
 import axios from 'axios';
 
 // Crear instancia de Axios
 const http = axios.create({
-  baseURL: 'http://localhost:8080/api', 
+  baseURL: 'http://localhost:8080/api',
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
-// Interceptor para añadir token en cada request
+// Interceptor REQUEST → agrega Token
 http.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('jwtToken');
@@ -21,16 +20,35 @@ http.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor para manejar errores globales
+// Interceptor RESPONSE → Manejo global de errores
 http.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      console.warn('Token inválido');
+    // Si no hay response → caída de red, CORS, backend caído
+    if (!error.response) {
+      return Promise.reject({
+        status: null,
+        message: 'No hay conexión con el servidor',
+        detail: null,
+      });
+    }
+
+    const { status, data } = error.response;
+
+    // Manejo de Auth
+    if (status === 401) {
+      console.warn('[AUTH] Token inválido o expirado');
       localStorage.removeItem('jwtToken');
       window.location.href = '/login';
     }
-    return Promise.reject(error);
+
+    // Estructura del backend Spring
+    // ApiError: { status, message, detail, timestamp }
+    return Promise.reject({
+      status: data?.status || status,
+      message: data?.message || 'Error inesperado',
+      detail: data?.detail || null,
+    });
   }
 );
 
