@@ -6,7 +6,7 @@ import org.mapstruct.Mapping;
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingPrensasDTO;
 import com.mesacer.trackingnes.trackingnes_app.model.TrackingPrensas;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = { ParametersPrensasMapper.class })
 public interface TrackingPrensasMapper {
 
     @Mapping(source = "team.id", target = "teamId")
@@ -33,4 +33,5 @@ public interface TrackingPrensasMapper {
     @Mapping(source = "productId", target = "product.id")
     @Mapping(source = "equipmentId", target = "equipment.id")
     TrackingPrensas toEntity(TrackingPrensasDTO dto);
+
 }

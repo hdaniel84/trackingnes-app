@@ -14,12 +14,10 @@ public class ParametersPrensas {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /* 
-    // Relación con TrackingPrensas
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_tracking", nullable = false)
-    private TrackingPrensas tracking;
-*/
+    private TrackingPrensas trackingPrensas;
+
     // Relación con Parameter
     @ManyToOne
     @JoinColumn(name = "id_parameter", nullable = false)

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
@@ -59,12 +61,15 @@ public class TrackingPrensas {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
+    @OneToMany(mappedBy = "trackingPrensas", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ParametersPrensas> parameters = new ArrayList<>();
+
     @CreatedDate
-    @Column(name = "created_time")
+    @Column(name = "created_date")
     private LocalDateTime createdTime;
 
     @CreatedBy
-    @Column(name = "id_created_user")
+    @Column(name = "created_by")
     private Long createdUserId;
 
 }

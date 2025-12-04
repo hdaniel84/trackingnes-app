@@ -7,7 +7,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
             
             <div class="lg:col-span-9">
-                <TrackingPrensasForm />
+                <TrackingPrensasTabs />
             </div>
 
             <div class="lg:col-span-3">

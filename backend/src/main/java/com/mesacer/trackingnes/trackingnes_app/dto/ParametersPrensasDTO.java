@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class ParametersPrensasDTO {
-    private Long id;
+
     private Long trackingId;
     private Long parameterId;
     private String value;

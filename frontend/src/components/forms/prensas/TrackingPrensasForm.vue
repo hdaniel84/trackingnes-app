@@ -23,6 +23,7 @@ import TeamsSelect from '@/components/forms/global/TeamsSelect.vue';
 import ShiftsSelect from '@/components/forms/global/ShiftsSelect.vue';
 import EquipmentsSelect from '@/components/forms/global/EquipmentsSelect.vue';
 import RawMaterialSelect from '@/components/forms/global/RawMaterialSelect.vue';
+import ParametersForm from '@/components/forms/global/ParametersForm.vue';
 
 const store = useTrackingPrensasStore();
 
@@ -44,6 +45,10 @@ const { value: shift } = useField('shift');
 const { value: equipment } = useField('equipment');
 const { value: rawMaterial } = useField('rawMaterial');
 const { value: quantity } = useField('quantity');
+const { value: parameters } = useField('parameters', {
+  initialValue: []
+});
+
 
 onMounted(() => {
   startTime.value = new Date();
@@ -63,7 +68,8 @@ const onSubmit = handleSubmit(async (values) => {
       shiftId: values.shift.id,
       equipmentId: values.equipment.id,
       rawMaterialId: values.rawMaterial.id,
-      quantity: values.quantity
+      quantity: values.quantity,
+      parameters: parameters.value
     };
 
     await store.create(payload);
@@ -89,12 +95,6 @@ const onSubmit = handleSubmit(async (values) => {
   <div class="w-full max-w-7xl mx-auto">
     <div
       class="bg-surface-0 dark:bg-surface-900 p-8 rounded-xl shadow-lg border border-surface-200 dark:border-surface-700">
-
-      <div class="mb-8 border-b border-surface-200 dark:border-surface-700 pb-4">
-        <h2 class="text-2xl font-bold text-surface-900 dark:text-surface-0">Registo de Produção</h2>
-        <p class="text-muted-color mt-1">Preencha os detalhes da unidade e produção abaixo.</p>
-      </div>
-
       <form @submit.prevent="onSubmit">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
 
@@ -166,12 +166,20 @@ const onSubmit = handleSubmit(async (values) => {
             <small v-if="errors.equipment" class="text-red-500 mt-1 block">{{ errors.equipment }}</small>
           </div>
 
-          <div class="col-span-12 mt-4">
+          <div class="col-span-12 mt-2 md:col-span-7">
             <label for="comments" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Comentários /
               Observações</label>
             <Textarea id="comments" v-model="comments" rows="4" class="w-full"
               placeholder="Escreva observações adicionais aqui..." />
           </div>
+          
+            <div class="col-span-12 mt-2 md:col-span-5">
+              <label class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Parâmetros de
+                Produção</label>
+              <small v-if="errors.parameters" class="text-red-500 mt-1 block">{{ errors.parameters }}</small>
+              <ParametersForm v-model="parameters" />
+            </div>
+          
 
           <div class="col-span-12 flex justify-end mt-6">
             <Button type="submit" label="Guardar Registo" icon="pi pi-check" class="w-full md:w-auto px-8" />

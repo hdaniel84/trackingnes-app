@@ -60,5 +60,29 @@ export const trackingPrensasSchema = z.object({
     .any()
     .refine(val => val && val.id, {
       message: 'Matéria prima é obrigatória'
-    })
+    }),
+
+  parameters: z
+    .array(
+      z.object({
+        parameterId: z.number({
+          required_error: 'Parâmetro é obrigatório',
+          message: 'Tipo de parâmetro é obrigatório'
+        }),
+        value: z.string().min(1, {
+          message: 'Valor do parâmetro é obrigatório'
+        })
+      })
+    )
+    .optional()
+    .refine(
+      params => {
+        if (!params) return true; // si es opcional y no hay parámetros, pasa
+        const ids = params.map(p => p.parameterId);
+        return new Set(ids).size === ids.length; // no duplicados
+      },
+      {
+        message: 'Não pode haver parâmetros duplicados'
+      }
+    )
 });

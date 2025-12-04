@@ -2,6 +2,7 @@ package com.mesacer.trackingnes.trackingnes_app.dto;
 
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -51,4 +52,6 @@ public class TrackingPrensasDTO {
     private LocalDateTime createdTime;
     private Long createdUserId;
     private LocalDateTime endTime;
+
+    private List<ParametersPrensasDTO> parameters;
 }

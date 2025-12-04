@@ -46,6 +46,12 @@ public class TrackingPrensasServiceImpl implements TrackingPrensasService {
     @Override
     public TrackingPrensasDTO save(TrackingPrensasDTO dto) {
         TrackingPrensas entity = mapper.toEntity(dto);
+
+         // asegurar relación bidireccional
+        if (entity.getParameters() != null) {
+            entity.getParameters().forEach(p -> p.setTrackingPrensas(entity));
+        }
+
         TrackingPrensas saved = repository.save(entity);
         return mapper.toDTO(saved);
     }
