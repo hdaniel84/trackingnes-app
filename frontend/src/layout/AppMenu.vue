@@ -12,8 +12,7 @@ const model = ref([
         label: 'Fases',
         items: [
             { label: 'Prensas', icon: 'pi pi-fw pi-chart-scatter', to: '/prensas' },
-            { label: 'Unidade II', icon: 'pi pi-fw pi-check-square', to: '/uikit/input' },
-            { label: 'Vidragem', icon: 'pi pi-fw pi-bullseye', to: '/uikit/button', class: 'rotated-icon' },
+            { label: 'Vidragem', icon: 'pi pi-fw pi-bullseye', to: '/vidragem', class: 'rotated-icon' },
             { label: 'KeraJet', icon: 'pi pi-fw pi-print', to: '/uikit/table' },
             { label: 'Forno Entrada', icon: 'pi pi-fw pi-gauge', to: '/uikit/list' },
             { label: 'Forno Saída', icon: 'pi pi-fw pi-external-link', to: '/uikit/tree' },

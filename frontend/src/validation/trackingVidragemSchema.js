@@ -1,7 +1,13 @@
 import { z } from 'zod';
 
-export const trackingPrensasSchema = z.object({
-  logisticUnit: z
+export const trackingVidragemSchema = z.object({
+  logisticUnitInId: z
+    .any()
+    .refine(val => val !== null && val !== undefined, {
+      error: 'Unidade logística é obrigatória'
+    }),
+
+    logisticUnitOutId: z
     .any()
     .refine(val => val !== null && val !== undefined, {
       error: 'Unidade logística é obrigatória'

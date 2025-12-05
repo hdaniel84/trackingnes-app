@@ -7,7 +7,7 @@ import TabPanels from 'primevue/tabpanels';
 import TabPanel from 'primevue/tabpanel';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
-import TrackingPrensasForm from '@/components/forms/prensas/TrackingPrensasForm.vue';
+import TrackingVidragemForm from '@/components/forms/vidragem/TrackingVidragemForm.vue';
 
 // Lista de colores Tailwind (puedes personalizar)
 const colors = [
@@ -19,7 +19,7 @@ const colors = [
     'bg-red-300'
 ];
 
-// Estado dinámico de prensas
+// Estado dinámico de vidragem
 const presses = ref([
     { id: Date.now(), name: 'Registo 1', editing: false, color: colors[0] }
 ]);
@@ -64,7 +64,7 @@ const saveTitle = (press) => {
                     <Button label="Adicionar" icon="pi pi-plus" @click="addPress" />
                 </div>
                 <Tab v-for="press in presses" :key="press.id" :value="press.id.toString()">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2" >
                         <template v-if="press.editing">
                             <InputText v-model="press.name" class="w-32" @blur="saveTitle(press)" />
                         </template>
@@ -82,12 +82,12 @@ const saveTitle = (press) => {
                     <div class="p-4 rounded-lg" :class="press.color">
                         <div class="mb-5 ml-2">
                             <h3 class="text-2xl font-bold text-surface-900 dark:text-surface-0">
-                                <i class="pi pi-chart-scatter mr-2" style="font-size: 2rem"></i>
-                                Prensas - Registo de produção ({{ press.name }})
+                                <i class="pi pi-bullseye mr-2" style="font-size: 2rem"></i>
+                                Vidragem - Registo de produção ({{ press.name }})
                             </h3>
                         </div>
 
-                        <TrackingPrensasForm :pressName="press.name" />
+                        <TrackingVidragemForm :pressName="press.name" />
                     </div>
                 </TabPanel>
             </TabPanels>

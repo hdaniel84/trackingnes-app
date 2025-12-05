@@ -3,7 +3,7 @@ package com.mesacer.trackingnes.trackingnes_app.dto;
 import lombok.Data;
 
 @Data
-public class ParametersPrensasDTO {
+public class ParameterVidragemDTO {
 
     private Long trackingId;
     private Long parameterId;

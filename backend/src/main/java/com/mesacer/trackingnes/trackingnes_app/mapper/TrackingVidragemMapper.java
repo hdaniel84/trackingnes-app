@@ -2,11 +2,11 @@ package com.mesacer.trackingnes.trackingnes_app.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import com.mesacer.trackingnes.trackingnes_app.dto.TrackingPrensasDTO;
-import com.mesacer.trackingnes.trackingnes_app.model.TrackingPrensas;
+import com.mesacer.trackingnes.trackingnes_app.dto.TrackingVidragemDTO;
+import com.mesacer.trackingnes.trackingnes_app.model.TrackingVidragem;
 
-@Mapper(componentModel = "spring", uses = { ParametersPrensasMapper.class })
-public interface TrackingPrensasMapper {
+@Mapper(componentModel = "spring", uses = { ParameterVidragemMapper.class })
+public interface TrackingVidragemMapper {
 
     @Mapping(source = "team.id", target = "teamId")
     @Mapping(source = "team.description", target = "teamDescription")
@@ -24,13 +24,13 @@ public interface TrackingPrensasMapper {
 
     @Mapping(source = "equipment.id", target = "equipmentId")
     @Mapping(source = "equipment.description", target = "equipmentDescription")
-    TrackingPrensasDTO toDTO(TrackingPrensas entity);
+    TrackingVidragemDTO toDTO(TrackingVidragem entity);
 
     @Mapping(source = "teamId", target = "team.id")
     @Mapping(source = "shiftId", target = "shift.id")
     @Mapping(source = "rawMaterialId", target = "rawMaterial.id")
     @Mapping(source = "productId", target = "product.id")
     @Mapping(source = "equipmentId", target = "equipment.id")
-    TrackingPrensas toEntity(TrackingPrensasDTO dto);
+    TrackingVidragem toEntity(TrackingVidragemDTO dto);
 
 }

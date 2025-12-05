@@ -1,6 +1,7 @@
 package com.mesacer.trackingnes.trackingnes_app.dto;
 
 import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,9 +10,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 @Data
-public class TrackingPrensasDTO {
+public class TrackingVidragemDTO {
     private Long id;
-    private LocalDateTime startTime;
 
     @NotNull
     private Long teamId;
@@ -23,34 +23,40 @@ public class TrackingPrensasDTO {
     private String shiftDescription;
 
     @NotNull
-    private Long rawMaterialId;
-    private String rawMaterialSapCode;          
-    private String rawMaterialDescription;  
-    
-    @NotNull
-    @NotBlank
-    private String lote;
-
-    @NotNull
     private Long productId;
     private String productDescription;
-
-    @NotNull
-    @Min(value = 0, message = "Campo não válido")
-    private Integer quantity;
-
-    @NotNull
-    @Min(value = 0, message = "Campo não válido")
-    private Integer logisticUnit;
-    private String comments;
 
     @NotNull
     private Long equipmentId;
     private String equipmentDescription;
 
-    private LocalDateTime createdTime;
-    private Long createdUserId;
-    private LocalDateTime endTime;
+    @NotNull
+    @Min(value = 0, message = "Campo não válido")
+    private Integer logisticUnitInId;
 
-    private List<ParametersPrensasDTO> parameters;
+    @NotNull
+    @Min(value = 0, message = "Campo não válido")
+    private Integer logisticUnitOutId;
+
+    @NotNull
+    @Min(value = 0, message = "Campo não válido")
+    private Integer quantity;
+
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    
+    @NotNull
+    private Long rawMaterialId;
+    private String rawMaterialSapCode;          
+    private String rawMaterialDescription;
+    
+    @NotNull
+    @NotBlank
+    private String lote;
+
+    private List<ParameterVidragemDTO> parameters;
+
+    private String comments;
+    private LocalDateTime createdDate;
+    private Long createdBy;
 }

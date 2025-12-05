@@ -46,8 +46,14 @@ onMounted(() => {
     <div v-else class="p-field">
       <span class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Artigo</span>
       <Select inputId="productSelect" id="product" class="mt-2" v-model="selectedProduct" :options="productStore.items"
-        optionLabel="description" placeholder="Seleciona" filter />
-
+        optionLabel="description" placeholder="Seleciona" filter :filterFields="['codigoProduto','description']">
+        <template #option="slotProps">
+          <div class="flex gap-2">
+            <span class="font-bold">{{ slotProps.option.codigoProduto }}</span>
+            <span>{{ slotProps.option.description }}</span>
+          </div>
+        </template>
+      </Select>
     </div>
   </div>
 </template>

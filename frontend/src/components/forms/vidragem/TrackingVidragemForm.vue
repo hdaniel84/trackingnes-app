@@ -1,9 +1,9 @@
 <script setup>
 
-import { useTrackingPrensasStore } from '@/stores/trackingPrensasStore';
+import { useTrackingVidragemStore } from '@/stores/trackingVidragemStore';
 import { useForm, useField } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
-import { trackingPrensasSchema } from '@/validation/trackingPrensasSchema';
+import { trackingVidragemSchema } from '@/validation/trackingVidragemSchema';
 import { onMounted } from 'vue';
 
 // ✅ Importar helpers
@@ -25,16 +25,17 @@ import EquipmentsSelect from '@/components/forms/global/EquipmentsSelect.vue';
 import RawMaterialSelect from '@/components/forms/global/RawMaterialSelect.vue';
 import ParametersForm from '@/components/forms/global/ParametersForm.vue';
 
-const store = useTrackingPrensasStore();
+const store = useTrackingVidragemStore();
 
 const { notifySuccess, notifyError } = useNotify();
 const { showErrorDialog } = useErrorDialog();
 
 const { handleSubmit, errors } = useForm({
-  validationSchema: toTypedSchema(trackingPrensasSchema)
+  validationSchema: toTypedSchema(trackingVidragemSchema)
 });
 
-const { value: logisticUnit } = useField('logisticUnit');
+const { value: logisticUnitInId } = useField('logisticUnitInId');
+const { value: logisticUnitOutId } = useField('logisticUnitOutId');
 const { value: lote } = useField('lote');
 const { value: startTime } = useField('startTime');
 const { value: endTime } = useField('endTime');
@@ -58,7 +59,8 @@ onMounted(() => {
 const onSubmit = handleSubmit(async (values) => {
   try {
     const payload = {
-      logisticUnit: values.logisticUnit,
+      logisticUnitInId: values.logisticUnitInId,
+      logisticUnitOutId: values.logisticUnitOutId,
       lote: values.lote,
       startTime: values.startTime,
       endTime: values.endTime,
@@ -99,7 +101,7 @@ const onSubmit = handleSubmit(async (values) => {
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
 
           <div class="col-span-12 md:col-span-5">
-            <EquipmentsSelect v-model="equipment" class="w-full" filterSection="prensas" />
+            <EquipmentsSelect v-model="equipment" class="w-full" filterSection="vidragem" />
             <small v-if="errors.equipment" class="text-red-500 mt-1 block">{{ errors.equipment }}</small>
           </div>
 
@@ -108,17 +110,25 @@ const onSubmit = handleSubmit(async (values) => {
             <small v-if="errors.product" class="text-red-500 mt-1 block">{{ errors.product }}</small>
           </div>
 
-          <div class="col-span-12 md:col-span-6">
-            <label for="car" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Unidade logística
-              (Nro. Carro)</label>
-            <InputNumber v-model="logisticUnit" inputId="car" :useGrouping="false" fluid class="w-full"
+          <div class="col-span-12 md:col-span-4">
+            <label for="car" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Nro. Carro na entrada</label>
+            <InputNumber v-model="logisticUnitInId" inputId="car" :useGrouping="false" fluid class="w-full"
               placeholder="Ex: 123" />
-            <small v-if="errors.logisticUnit" class="text-red-500 mt-1 block">
-              {{ errors.logisticUnit }}
+            <small v-if="errors.logisticUnitInId" class="text-red-500 mt-1 block">
+              {{ errors.logisticUnitInId }}
             </small>
           </div>
 
-          <div class="col-span-12 md:col-span-6">
+          <div class="col-span-12 md:col-span-4">
+            <label for="car2" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Nro. Carro na saída</label>
+            <InputNumber v-model="logisticUnitOutId" inputId="car2" :useGrouping="false" fluid class="w-full"
+              placeholder="Ex: 456" />
+            <small v-if="errors.logisticUnitOutId" class="text-red-500 mt-1 block">
+              {{ errors.logisticUnitOutId }}
+            </small>
+          </div>
+
+          <div class="col-span-12 md:col-span-4">
             <label for="quantity" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Quantidade
               peças</label>
             <InputNumber v-model="quantity" inputId="quantity" :useGrouping="false" fluid class="w-full"
@@ -161,7 +171,7 @@ const onSubmit = handleSubmit(async (values) => {
           </div>
 
           <div class="col-span-12 md:col-span-3">
-            <TeamsSelect v-model="team" filterSection="prensas" class="w-full" />
+            <TeamsSelect v-model="team" filterSection="vidragem" class="w-full" />
             <small v-if="errors.team" class="text-red-500 mt-1 block">{{ errors.team }}</small>
           </div>
 

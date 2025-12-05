@@ -12,19 +12,16 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "tracking_prensas")
+@Table(name = "tracking_vidragem")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class TrackingPrensas {
+public class TrackingVidragem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "start_time", nullable = false)
-    private LocalDateTime startTime;
 
     @ManyToOne
     @JoinColumn(name = "id_team", nullable = false)
@@ -35,34 +32,40 @@ public class TrackingPrensas {
     private Shift shift;
 
     @ManyToOne
-    @JoinColumn(name = "id_raw_material_type", nullable = false)
-    private RawMaterial rawMaterial;
-
-    @Column(name = "lote_raw_material")
-    private String lote;
-
-    @ManyToOne
     @JoinColumn(name = "id_product", nullable = false)
     private Product product;
-
-    @Column(name = "quantity")
-    private Integer quantity;
-
-    @Column(name = "id_logistic_unit")
-    private Integer logisticUnit;
-
-    @Column(name = "comments", columnDefinition = "TEXT")
-    private String comments;
 
     @ManyToOne
     @JoinColumn(name = "id_equipment", nullable = false)
     private Equipment equipment;
 
+    @Column(name = "id_logistic_unit_in", nullable = false)
+    private Integer logisticUnitInId;
+
+    @Column(name = "id_logistic_unit_out", nullable = false)
+    private Integer logisticUnitOutId;
+
+    @Column(nullable = false)
+    private Integer quantity;
+
+    @Column(name = "start_time", nullable = false)
+    private LocalDateTime startTime;
+
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
-    @OneToMany(mappedBy = "trackingPrensas", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ParametersPrensas> parameters = new ArrayList<>();
+    @ManyToOne
+    @JoinColumn(name = "id_raw_material_type", nullable = false)
+    private RawMaterial rawMaterial;
+
+    @Column(name = "lot_raw_material", nullable = false, length = 50)
+    private String lote;
+
+    @Column(columnDefinition = "TEXT")
+    private String comments;
+
+    @OneToMany(mappedBy = "trackingVidragem", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ParameterVidragem> parameters = new ArrayList<>();
 
     @CreatedDate
     @Column(name = "created_date")
@@ -71,5 +74,4 @@ public class TrackingPrensas {
     @CreatedBy
     @Column(name = "created_by")
     private Long createdBy;
-
 }

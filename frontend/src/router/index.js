@@ -11,8 +11,14 @@ const router = createRouter({
         },
         {
             path: '/prensas',
-            name: 'formlayout',
+            name: 'prensas',
             component: () => import('@/views/pages/prensas/PrensasMain.vue'),
+            meta: { requiresAuth: true } 
+        },
+        {
+            path: '/vidragem',
+            name: 'vidragem',
+            component: () => import('@/views/pages/vidragem/VidragemMain.vue'),
             meta: { requiresAuth: true } 
         },
         // ... (el resto de tus rutas de uikit, crud, etc., deben seguir este patrón)
