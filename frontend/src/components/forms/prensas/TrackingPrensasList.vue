@@ -55,15 +55,15 @@ const formatDateTime = (dateString) => {
                     <div class="flex items-start gap-3 flex-1">
                         <i class="pi pi-pallet text-3xl text-primary-600 dark:text-primary-400 mt-1"></i>
 
-                        <div class="flex flex-col">
-                            <div class="font-semibold text-surface-900 dark:text-surface-0 leading-tight mb-3">
+                        <div class="flex flex-col w-full">
+                            <div class="flex justify-end font-semibold text-surface-900 dark:text-surface-0 leading-tight mb-3">
                                 Carro #{{ item.logisticUnit }}
-                                <Tag :value="`${item.quantity} Un.`" severity="success" class="text-sm font-bold p-2 ml-6">
+                                <Tag :value="`${item.quantity} Un.`" severity="success" class="text-sm font-bold ml-6">
                                 </Tag>
-
                             </div>
+
                             <span class="text-sm text-surface-600 dark:text-surface-300">
-                                <i class="pi pi-bullseye mr-1"></i> {{ item.productDescription || 'Produto Desconhecido' }}
+                                <i class="pi pi-bullseye mr-1"></i> {{ item.productDescription || 'Produto Desconhecido'}}
                             </span>
 
                             <span class="text-xs text-surface-400 dark:text-surface-500 mt-2">
@@ -76,7 +76,8 @@ const formatDateTime = (dateString) => {
                     </div>
                 </div>
 
-                <p class="text-xs italic text-surface-500 dark:text-surface-400 mt-3 border-t border-surface-100 dark:border-surface-700 pt-2 line-clamp-2">
+                <p
+                    class="text-xs italic text-surface-500 dark:text-surface-400 mt-3 border-t border-surface-100 dark:border-surface-700 pt-2 line-clamp-2">
                     **Equipa:** {{ item.teamDescription }} ({{ item.teamSectionDescription }})
                 </p>
 

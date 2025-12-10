@@ -2,6 +2,7 @@ package com.mesacer.trackingnes.trackingnes_app.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,18 +18,16 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.authentication.AuthenticationManager;
-// ...
 
 import java.util.Arrays;
 
 @Configuration
-@EnableWebSecurity // Habilita la configuración de seguridad de Spring
+@EnableWebSecurity 
 @EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true)
 public class WebSecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    // Inyecta el filtro que acabamos de crear
     public WebSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
@@ -42,6 +41,10 @@ public class WebSecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/tracking-prensas/**").hasAnyAuthority("READ_PRENSAS")
+                        .requestMatchers(HttpMethod.GET, "/api/tracking-vidragem/**").hasAnyAuthority("READ_VIDRAGEM")
+                        .requestMatchers(HttpMethod.POST,"/api/tracking-prensas/**").hasAnyAuthority("WRITE_PRENSAS")
+                        .requestMatchers(HttpMethod.POST, "/api/tracking-vidragem/**").hasAnyAuthority("WRITE_VIDRAGEM")
                         .anyRequest().authenticated());
 
         return http.build();
@@ -66,7 +69,7 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Define los orígenes permitidos. Cambia '*' a la URL de tu frontend de Vue.js
+        // Define los orígenes permitidos. Cambiar '*' a la URL del frontend de Vue.js
         // en producción (ej: http://localhost:5173)
         configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:5173", "http://localhost:8081"));
 

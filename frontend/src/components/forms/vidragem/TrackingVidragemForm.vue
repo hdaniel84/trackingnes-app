@@ -27,7 +27,7 @@ import ParametersForm from '@/components/forms/global/ParametersForm.vue';
 
 const store = useTrackingVidragemStore();
 
-const { notifySuccess, notifyError } = useNotify();
+const { notifySuccess } = useNotify();
 const { showErrorDialog } = useErrorDialog();
 
 const { handleSubmit, errors } = useForm({
@@ -50,16 +50,16 @@ const { value: parameters } = useField('parameters', {
   initialValue: []
 });
 
-
 onMounted(() => {
   startTime.value = new Date();
 });
 
 
 const onSubmit = handleSubmit(async (values) => {
+
   try {
     const payload = {
-      logisticUnitInId: values.logisticUnitInId,
+      logisticUnitInId: values.logisticUnitInId.logisticUnit ? values.logisticUnitInId.logisticUnit : logisticUnitInId.value,
       logisticUnitOutId: values.logisticUnitOutId,
       lote: values.lote,
       startTime: values.startTime,
@@ -75,18 +75,10 @@ const onSubmit = handleSubmit(async (values) => {
     };
 
     await store.create(payload);
-
-    // ✅ Usar helper global
     notifySuccess('Registo criado com sucesso');
+
   } catch (err) {
     const backendError = err;
-    const message = backendError?.message || 'Erro inesperado';
-    const detail = backendError?.detail || '';
-
-    // ✅ Opción 1: Toast rápido
-    notifyError(detail, message);
-
-    // ✅ Opción 2: Dialog con detalle
     showErrorDialog(backendError);
   }
 });
@@ -111,16 +103,17 @@ const onSubmit = handleSubmit(async (values) => {
           </div>
 
           <div class="col-span-12 md:col-span-4">
-            <label for="car" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Nro. Carro na entrada</label>
-            <InputNumber v-model="logisticUnitInId" inputId="car" :useGrouping="false" fluid class="w-full"
-              placeholder="Ex: 123" />
+            <label for="car" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Nro. Carro entrada:</label>
+            <!--<InputNumber v-model="logisticUnitInId" inputId="car" :useGrouping="false" fluid class="w-full" placeholder="Ex: 123" />-->
+              <PrensasCarSelect v-model="logisticUnitInId" :filterProduct="product ? product.description : null" class="w-full" />
             <small v-if="errors.logisticUnitInId" class="text-red-500 mt-1 block">
               {{ errors.logisticUnitInId }}
             </small>
           </div>
 
           <div class="col-span-12 md:col-span-4">
-            <label for="car2" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Nro. Carro na saída</label>
+            <label for="car2" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Nro. Carro na
+              saída</label>
             <InputNumber v-model="logisticUnitOutId" inputId="car2" :useGrouping="false" fluid class="w-full"
               placeholder="Ex: 456" />
             <small v-if="errors.logisticUnitOutId" class="text-red-500 mt-1 block">

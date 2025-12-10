@@ -21,7 +21,7 @@ const router = createRouter({
             component: () => import('@/views/pages/vidragem/VidragemMain.vue'),
             meta: { requiresAuth: true } 
         },
-        // ... (el resto de tus rutas de uikit, crud, etc., deben seguir este patrón)
+        // ... (el resto de rutas deben seguir este patrón)
         
         // ------------------------------------------------------------------------
         // 🛡️ RUTAS PÚBLICAS (No necesitan el AppLayout)

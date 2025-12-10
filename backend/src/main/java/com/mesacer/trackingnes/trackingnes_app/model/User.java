@@ -11,22 +11,22 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Set;
 
-@Data 
-@NoArgsConstructor 
-@AllArgsConstructor 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name = "users") 
+@Table(name = "users")
 public class User implements UserDetails {
 
-    @Id 
-    @GeneratedValue(strategy = GenerationType.IDENTITY) 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String username; 
-    
+    private String username;
+
     @Column(nullable = false)
-    private String password; 
+    private String password;
 
     @Column
     private String email;
@@ -35,18 +35,27 @@ public class User implements UserDetails {
     private LocalDateTime created_at;
 
     @ManyToMany(fetch = FetchType.EAGER) // EAGER para cargar los roles inmediatamente con el usuario
-    @JoinTable(
-        name = "user_roles", 
-        joinColumns = @JoinColumn(name = "user_id"), 
-        inverseJoinColumns = @JoinColumn(name = "role_id") 
-    )
+    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles;
 
-    // ------------------- Métodos de UserDetails (Spring Security) -------------------
-    
+    // ------------------- Métodos de UserDetails (Spring Security)
+    // -------------------
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles;
+
+        // Colección para authorities
+        Set<GrantedAuthority> authorities = new java.util.HashSet<>();
+
+        // Agregar roles
+        authorities.addAll(roles);
+
+        // Agregar privilegios de cada rol
+        roles.forEach(role -> {
+            authorities.addAll(role.getPrivileges());
+        });
+
+        return authorities;
     }
 
     @Override

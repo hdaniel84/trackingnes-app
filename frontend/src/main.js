@@ -14,6 +14,7 @@ import { useAuthStore } from './stores/auth';
 import '@/assets/tailwind.css';
 import '@/assets/styles.scss';
 import { updatePrimaryPalette, palette } from '@primeuix/themes';
+import ptPTLocale from '@/config/localePT'
 
 
 const app = createApp(App);
@@ -26,8 +27,10 @@ app.use(PrimeVue, {
     options: {
       darkModeSelector: '.app-dark'
     }
-  }
+  },
+  locale: ptPTLocale
 });
+
 app.use(ToastService);
 app.use(ConfirmationService);
 

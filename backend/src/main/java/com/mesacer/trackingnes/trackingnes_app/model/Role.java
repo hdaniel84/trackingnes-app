@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.util.Set;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,11 +20,18 @@ public class Role implements GrantedAuthority {
     private Long id;
 
     @Column(nullable = false, unique = true, length = 50)
-    private String name; // Ej: "ROLE_ADMIN", "ROLE_OPERATOR"
+    private String name; // Ej: "ROLE_ADMIN", "ROLE_PRENSA"
 
-    // Spring Security requiere este método para obtener la autoridad (el rol)
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "roles_privileges",
+        joinColumns = @JoinColumn(name = "id_role"),
+        inverseJoinColumns = @JoinColumn(name = "id_privilege")
+    )
+    private Set<Privilege> privileges;
+
     @Override
     public String getAuthority() {
-        return name;
+        return name; // Spring Security lo verá como ROLE_X
     }
 }
