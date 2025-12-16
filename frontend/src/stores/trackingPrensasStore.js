@@ -92,6 +92,21 @@ export const useTrackingPrensasStore = defineStore('trackingPrensas', {
       } finally {
         this.loading = false;
       }
+    },
+
+    async searchByCodigoProduto(codigoProduto, page = 0, size = 20, sort = 'startTime,desc') {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await TrackingPrensasService.searchByCodigoProduto(codigoProduto, page, size, sort);
+        this.items = response.data.content;       // lista de registros
+        this.totalItems = response.data.totalElements; // total de elementos para paginación
+      } catch (err) {
+        this.error = 'Não foi possível realizar a busca.';
+        throw err;
+      } finally {
+        this.loading = false;
+      }
     }
   }
 });

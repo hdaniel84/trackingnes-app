@@ -20,7 +20,10 @@ public interface TrackingPrensasMapper {
     @Mapping(source = "rawMaterial.description", target = "rawMaterialDescription")
 
     @Mapping(source = "product.id", target = "productId")
+    @Mapping(source = "product.codigoProduto", target = "productCode")
     @Mapping(source = "product.description", target = "productDescription")
+    @Mapping(source = "product.shape.id", target = "productShapeId")
+    
 
     @Mapping(source = "equipment.id", target = "equipmentId")
     @Mapping(source = "equipment.description", target = "equipmentDescription")

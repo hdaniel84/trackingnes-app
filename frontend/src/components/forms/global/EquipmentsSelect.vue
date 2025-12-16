@@ -1,68 +1,67 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useEquipmentStore } from '@/stores/equipmentStore';
 import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
 import Select from 'primevue/select';
 
 const props = defineProps({
-  modelValue: {
-    type: Object,
-    default: null
-  },
-  filterSection: {
-    type: String,
-    default: null
-  }
+  modelValue: { type: Object, default: null },
+  filterSection: { type: String, default: null }
 });
+
 const emit = defineEmits(['update:modelValue']);
+const store = useEquipmentStore();
 
-const equipmentsStore = useEquipmentStore();
-const selectedEquipment = ref(props.modelValue);
-
-watch(selectedEquipment, (newVal) => {
-  emit('update:modelValue', newVal);
+const selectedEquipment = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
 });
 
-onMounted(() => {
-  if (equipmentsStore.items.length === 0) {
-    equipmentsStore.fetchEquipments();
-  }
-});
-
-// PROPIEDAD COMPUTADA para aplicar el filtro localmente
 const filteredEquipments = computed(() => {
-  const items = equipmentsStore.items;
-  const filter = props.filterSection;
-
-  // Si no hay filtro o no hay elementos, retorna la lista completa
-  if (!filter || items.length === 0) {
-    return items;
-  }
-
-  // Filtra los elementos donde sectionDescription incluye el string de filterSection (ignorando mayúsculas)
-  return items.filter(team =>
-    team.sectionDescription &&
-    team.sectionDescription.toLowerCase().includes(filter.toLowerCase())
+  const items = store.items;
+  if (!props.filterSection || items.length === 0) return items;
+  
+  return items.filter(eq => 
+    eq.sectionDescription?.toLowerCase().includes(props.filterSection.toLowerCase())
   );
+});
+
+onMounted(async () => {
+  if (store.items.length === 0) {
+    await store.fetchEquipments();
+  }
 });
 </script>
 
 <template>
-  <div>
-    <div v-if="equipmentsStore.loading">
-      <ProgressSpinner style="width: 50px; height: 50px" strokeWidth="8" animationDuration=".5s" />
-      <p>Carregando equipamentos...</p>
+  <div class="w-full">
+    <div v-if="store.loading" class="flex items-center gap-2 py-2">
+      <ProgressSpinner style="width: 30px; height: 30px" strokeWidth="6" />
+      <span class="text-sm text-surface-500">A carregar equipamentos...</span>
     </div>
 
-    <div v-else-if="equipmentsStore.error">
-      <Message severity="error">{{ equipmentsStore.error }}</Message>
+    <div v-else-if="store.error">
+      <Message severity="error" :closable="false" class="w-full">{{ store.error }}</Message>
     </div>
 
-    <div v-else class="p-field">
-      <span class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Equipamento</span>
-      <Select id="equipmentSelect" inputId="equipmentSelect" class="mt-2" v-model="selectedEquipment"
-        :options="filteredEquipments" optionLabel="description" placeholder="Selecciona equipamento" filter />
+    <div v-else>
+      <label for="equipmentSelect" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">
+        Equipamento
+      </label>
+      
+      <Select
+        id="equipmentSelect"
+        v-model="selectedEquipment"
+        :options="filteredEquipments"
+        optionLabel="description"
+        dataKey="id"  
+        placeholder="Seleciona equipamento"
+        filter
+        showClear
+        fluid
+        class="w-full"
+      />
     </div>
   </div>
 </template>

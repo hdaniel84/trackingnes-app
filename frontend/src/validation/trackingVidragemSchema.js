@@ -1,16 +1,21 @@
 import { z } from 'zod';
 
 export const trackingVidragemSchema = z.object({
-  logisticUnitInId: z
-    .any()
-    .refine(val => val !== null && val !== undefined, {
-      error: 'Unidade logística é obrigatória'
+  logisticUnitInId: z.coerce
+    .number({
+      required_error: 'Carro entrada é obrigatório',
+      invalid_type_error: 'Apenas números são permitidos',
+      message: 'Carro entrada inválido'
+    })
+    .min(1, { message: 'Carro entrada é obrigatório' })
+    .refine(val => !isNaN(val), { 
+      message: 'Carro entrada inválido'
     }),
 
-    logisticUnitOutId: z
+  logisticUnitOutId: z
     .any()
     .refine(val => val !== null && val !== undefined, {
-      error: 'Unidade logística é obrigatória'
+      error: 'Carro saída é obrigatória'
     }),
 
   quantity: z
@@ -40,7 +45,7 @@ export const trackingVidragemSchema = z.object({
       error: 'Data de fim inválida'
     }),
 
-  comments: z.string().optional(),
+  comments: z.string().optional().nullable(),
 
   product: z
     .any()

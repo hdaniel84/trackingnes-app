@@ -4,7 +4,7 @@ import { useTrackingVidragemStore } from '@/stores/trackingVidragemStore';
 import { useForm, useField } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { trackingVidragemSchema } from '@/validation/trackingVidragemSchema';
-import { onMounted } from 'vue';
+import { onMounted, defineProps, watch, ref } from 'vue';
 
 // ✅ Importar helpers
 import { useNotify } from '@/layout/composables/notify';
@@ -25,12 +25,18 @@ import EquipmentsSelect from '@/components/forms/global/EquipmentsSelect.vue';
 import RawMaterialSelect from '@/components/forms/global/RawMaterialSelect.vue';
 import ParametersForm from '@/components/forms/global/ParametersForm.vue';
 
+const filterSectionVar = ref('vidragem');
+const props = defineProps({
+  item: Object, // registro a editar
+  mode: { type: String, default: 'create' } // 'create' o 'edit'
+});
+
 const store = useTrackingVidragemStore();
 
 const { notifySuccess } = useNotify();
 const { showErrorDialog } = useErrorDialog();
 
-const { handleSubmit, errors } = useForm({
+const { handleSubmit, errors, setValues } = useForm({
   validationSchema: toTypedSchema(trackingVidragemSchema)
 });
 
@@ -50,8 +56,30 @@ const { value: parameters } = useField('parameters', {
   initialValue: []
 });
 
+watch(() => props.item, (val) => {
+  if (val) {
+    setValues({
+      logisticUnitInId: val.logisticUnitInId ?? null,
+      logisticUnitOutId: val.logisticUnitOutId,
+      lote: val.lote,
+      startTime: new Date(val.startTime),
+      endTime: val.endTime ? new Date(val.endTime) : null,
+      comments: val.comments,
+      product: { id: val.productId, description: val.productDescription },
+      team: { id: val.teamId, description: val.teamDescription },
+      shift: { id: val.shiftId, description: val.shiftDescription },
+      equipment: { id: val.equipmentId, description: val.equipmentDescription },
+      rawMaterial: { id: val.rawMaterialId, description: val.rawMaterialDescription },
+      quantity: val.quantity,
+      parameters: val.parameters
+    });
+  }
+}, { immediate: true });
+
 onMounted(() => {
-  startTime.value = new Date();
+  if (props.mode === 'create') {
+    startTime.value = new Date();
+  }
 });
 
 
@@ -59,8 +87,8 @@ const onSubmit = handleSubmit(async (values) => {
 
   try {
     const payload = {
-      logisticUnitInId: values.logisticUnitInId.logisticUnit ? values.logisticUnitInId.logisticUnit : logisticUnitInId.value,
-      logisticUnitOutId: values.logisticUnitOutId,
+      logisticUnitInId: Number(values.logisticUnitInId),
+      logisticUnitOutId: Number(values.logisticUnitOutId),
       lote: values.lote,
       startTime: values.startTime,
       endTime: values.endTime,
@@ -74,12 +102,16 @@ const onSubmit = handleSubmit(async (values) => {
       parameters: parameters.value
     };
 
-    await store.create(payload);
-    notifySuccess('Registo criado com sucesso');
+    if (props.mode === 'create') {
+      await store.create(payload);
+      notifySuccess('Registo criado com sucesso');
+    } else {
+      await store.update(props.item.id, payload);
+      notifySuccess('Registo atualizado com sucesso');
+    }
 
   } catch (err) {
-    const backendError = err;
-    showErrorDialog(backendError);
+    showErrorDialog(err);
   }
 });
 </script>
@@ -93,7 +125,7 @@ const onSubmit = handleSubmit(async (values) => {
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
 
           <div class="col-span-12 md:col-span-5">
-            <EquipmentsSelect v-model="equipment" class="w-full" filterSection="vidragem" />
+            <EquipmentsSelect v-model="equipment" class="w-full" :filterSection="filterSectionVar" />
             <small v-if="errors.equipment" class="text-red-500 mt-1 block">{{ errors.equipment }}</small>
           </div>
 
@@ -103,9 +135,8 @@ const onSubmit = handleSubmit(async (values) => {
           </div>
 
           <div class="col-span-12 md:col-span-4">
-            <label for="car" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Nro. Carro entrada:</label>
-            <!--<InputNumber v-model="logisticUnitInId" inputId="car" :useGrouping="false" fluid class="w-full" placeholder="Ex: 123" />-->
-              <PrensasCarSelect v-model="logisticUnitInId" :filterProduct="product ? product.description : null" class="w-full" />
+            <PrensasCarSelect inputId="logisticUnitinSelect" v-model="logisticUnitInId"
+              :filterProduct="product ? product.shapeId : null" class="w-full" />
             <small v-if="errors.logisticUnitInId" class="text-red-500 mt-1 block">
               {{ errors.logisticUnitInId }}
             </small>
@@ -132,18 +163,21 @@ const onSubmit = handleSubmit(async (values) => {
           </div>
 
           <div class="col-span-12 md:col-span-6">
-            <label for="startTime" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Inicio da
+            <label for="startTimePicker" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Inicio
+              da
               produção</label>
-            <DatePicker v-model="startTime" showIcon showButtonBar showTime fluid class="w-full" />
+            <DatePicker inputId="startTimePicker" v-model="startTime" showIcon showButtonBar showTime fluid
+              class="w-full" />
             <small v-if="errors.startTime" class="text-red-500 mt-1 block">
               {{ errors.startTime }}
             </small>
           </div>
 
           <div class="col-span-12 md:col-span-6">
-            <label for="endTime" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Fim da
+            <label for="endTimePicker" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Fim da
               produção</label>
-            <DatePicker v-model="endTime" showIcon showButtonBar showTime fluid class="w-full" />
+            <DatePicker inputId="endTimePicker" v-model="endTime" showIcon showButtonBar showTime fluid
+              class="w-full" />
             <small v-if="errors.endTime" class="text-red-500 mt-1 block">
               {{ errors.endTime }}
             </small>
@@ -153,18 +187,18 @@ const onSubmit = handleSubmit(async (values) => {
 
 
           <div class="col-span-12 md:col-span-4">
-            <RawMaterialSelect v-model="rawMaterial" class="w-full" />
+            <RawMaterialSelect v-model="rawMaterial" class="w-full" :filterSection="filterSectionVar"/>
             <small v-if="errors.rawMaterial" class="text-red-500 mt-1 block">{{ errors.rawMaterial }}</small>
           </div>
 
           <div class="col-span-12 md:col-span-2">
             <label for="lote" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Lote MP</label>
-            <InputText v-model="lote" inputId="lote" fluid class="w-full" />
+            <InputText v-model="lote" inputId="lote" id="lote" fluid class="w-full" />
             <small v-if="errors.lote" class="text-red-500 mt-1 block">{{ errors.lote }}</small>
           </div>
 
           <div class="col-span-12 md:col-span-3">
-            <TeamsSelect v-model="team" filterSection="vidragem" class="w-full" />
+            <TeamsSelect v-model="team" class="w-full" :filterSection="filterSectionVar"/>
             <small v-if="errors.team" class="text-red-500 mt-1 block">{{ errors.team }}</small>
           </div>
 
@@ -181,8 +215,8 @@ const onSubmit = handleSubmit(async (values) => {
           </div>
 
           <div class="col-span-12 mt-2 md:col-span-5">
-            <label class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Parâmetros de
-              Produção</label>
+            <div class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">
+              Parâmetros de Produção</div>
             <small v-if="errors.parameters" class="text-red-500 mt-1 block">{{ errors.parameters }}</small>
             <ParametersForm v-model="parameters" />
           </div>

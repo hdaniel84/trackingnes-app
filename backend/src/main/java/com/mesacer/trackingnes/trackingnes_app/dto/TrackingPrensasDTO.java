@@ -25,7 +25,7 @@ public class TrackingPrensasDTO {
     @NotNull
     private Long rawMaterialId;
     private String rawMaterialSapCode;          
-    private String rawMaterialDescription;  
+    private String rawMaterialDescription;
     
     @NotNull
     @NotBlank
@@ -33,7 +33,9 @@ public class TrackingPrensasDTO {
 
     @NotNull
     private Long productId;
+    private String productCode;
     private String productDescription;
+    private String productShapeId;
 
     @NotNull
     @Min(value = 0, message = "Campo não válido")

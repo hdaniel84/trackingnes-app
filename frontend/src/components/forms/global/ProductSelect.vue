@@ -1,57 +1,70 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import ProgressSpinner from 'primevue/progressspinner';
-import Message from 'primevue/message';
+import { onMounted, computed } from 'vue';
 import Select from 'primevue/select';
 import { useProductStore } from '@/stores/productStore';
 
-// ✅ Props y emits para que funcione con v-model
 const props = defineProps({
-  modelValue: {
-    type: Object,
-    default: null
-  }
+  modelValue: { type: Object, default: null }
 });
+
 const emit = defineEmits(['update:modelValue']);
+const store = useProductStore();
 
-const productStore = useProductStore();
-
-// Estado local para el valor seleccionado
-const selectedProduct = ref(props.modelValue);
-
-// Sincronizar cambios hacia el padre
-watch(selectedProduct, (newVal) => {
-  emit('update:modelValue', newVal);
+// Usamos un computed con get/set para manejar el v-model limpiamente
+const selectedProduct = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
 });
 
-// Cargar productos al montar
-onMounted(() => {
-  if (productStore.items.length === 0) {
-    productStore.fetchProducts();
+onMounted(async () => {
+  if (store.items.length === 0) {
+    await store.fetchProducts();
   }
 });
 </script>
 
 <template>
-  <div>
-    <div v-if="productStore.loading">
-      <ProgressSpinner style="width: 50px; height: 50px" strokeWidth="8" animationDuration=".5s" />
-      <p>Carregando produtos...</p>
+  <div class="w-full">
+    <div v-if="store.loading" class="flex items-center gap-2 text-surface-500">
+      <i class="pi pi-spin pi-spinner" style="font-size: 1.2rem"></i>
+      <span class="text-sm">A carregar produtos...</span>
     </div>
 
-    <div v-else-if="productStore.error">
-      <Message severity="error">{{ productStore.error }}</Message>
+    <div v-else-if="store.error" class="text-red-500 text-sm">
+      {{ store.error }}
     </div>
 
-    <div v-else class="p-field">
-      <span class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Artigo</span>
-      <Select inputId="productSelect" id="product" class="mt-2" v-model="selectedProduct" :options="productStore.items"
-        optionLabel="description" placeholder="Seleciona" filter :filterFields="['codigoProduto','description']">
+    <div v-else>
+      <label for="productSelect" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">
+        Artigo / Produto
+      </label>
+      
+      <Select
+        id="productSelect"
+        v-model="selectedProduct"
+        :options="store.items"
+        optionLabel="description"
+        placeholder="Seleciona um produto"
+        dataKey="id" 
+        filter
+        :filterFields="['codigoProduto', 'description']"
+        showClear
+        fluid
+        class="w-full"
+      >
         <template #option="slotProps">
-          <div class="flex gap-2">
-            <span class="font-bold">{{ slotProps.option.codigoProduto }}</span>
-            <span>{{ slotProps.option.description }}</span>
+          <div class="flex flex-col">
+            <span class="font-bold text-sm">{{ slotProps.option.codigoProduto }}</span>
+            <span class="text-sm text-surface-600 dark:text-surface-400">{{ slotProps.option.description }}</span>
           </div>
+        </template>
+        
+        <template #value="slotProps">
+          <div v-if="slotProps.value" class="flex gap-2">
+            <span class="font-bold">{{ slotProps.value.codigoProduto }}</span>
+            <span>- {{ slotProps.value.description }}</span>
+          </div>
+          <span v-else>{{ slotProps.placeholder }}</span>
         </template>
       </Select>
     </div>

@@ -1,34 +1,32 @@
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useTrackingVidragemStore } from '@/stores/trackingVidragemStore';
-
 import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
-import Tag from 'primevue/tag'; // Útil para mostrar la cantidad
+import Tag from 'primevue/tag';
+import { useFormatters } from '@/layout/composables/useFormatters';
 
+const { formatDateTime } = useFormatters();
 const store = useTrackingVidragemStore();
 
+const selectedItem = ref(null);
+const showDetailDialog = ref(false);
+const showEditDialog = ref(false);
+
 onMounted(() => {
-    store.fetchAll({ page: 0, size: 10, sort: 'startTime,desc' }); // cargar registros al montar
+    store.fetchAll({ page: 0, size: 10, sort: 'startTime,desc' });
 });
 
-/**
- * Función auxiliar para formatear la fecha
- */
-const formatDateTime = (dateString) => {
-    if (!dateString) return 'N/A';
-    // Asumiendo que es una cadena ISO o un objeto Date, ajustamos a la localización (PT-PT)
-    const date = new Date(dateString);
-    if (isNaN(date)) return dateString; // Si no es una fecha válida, devuelve la cadena original
-
-    return date.toLocaleDateString('pt-PT', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+const openDetailDialog = (item) => {
+    selectedItem.value = item;
+    showDetailDialog.value = true;
 };
+
+const openEditDialog = (item) => {
+  selectedItem.value = item;
+  showEditDialog.value = true;
+};
+
 </script>
 
 <template>
@@ -49,21 +47,23 @@ const formatDateTime = (dateString) => {
         <div v-else class="flex flex-col gap-4 max-h-[80vh] overflow-y-auto pr-2">
 
             <div v-for="item in store.items" :key="item.id"
-                class="bg-surface-50 dark:bg-surface-800 p-4 rounded-xl border border-surface-200 dark:border-surface-700 shadow-md transition duration-300 hover:shadow-lg hover:bg-surface-100 dark:hover:bg-surface-700 cursor-pointer">
+                class="bg-surface-50 dark:bg-surface-800 p-2 rounded-xl border border-surface-200 dark:border-surface-700 shadow-md transition duration-300 hover:shadow-lg hover:bg-surface-100 dark:hover:bg-surface-700 cursor-pointer">
                 <div class="flex justify-between items-start gap-4">
 
-                    <div class="flex items-start gap-3 flex-1">
+                    <div class="flex items-start gap-3 flex-1" @click="openDetailDialog(item)">
                         <i class="pi pi-pallet text-3xl text-primary-600 dark:text-primary-400 mt-1"></i>
 
-                        <div class="flex flex-col">
-                            <div class="font-semibold text-surface-900 dark:text-surface-0 leading-tight mb-3">
+                        <div class="flex flex-col w-full">
+                            <div
+                                class="font-semibold text-surface-900 dark:text-surface-0 leading-tight mb-1 flex justify-end">
                                 Carro #{{ item.logisticUnitOutId }}
-                                <Tag :value="`${item.quantity} Un.`" severity="success" class="text-sm font-bold p-2 ml-6">
+                                <Tag :value="`${item.quantity} Un.`" severity="success" class="text-sm font-bold ml-6">
                                 </Tag>
 
                             </div>
                             <span class="text-sm text-surface-600 dark:text-surface-300">
-                                <i class="pi pi-bullseye mr-1"></i> {{ item.productDescription || 'Produto Desconhecido' }}
+                                <i class="pi pi-bullseye mr-1"></i> {{ item.productDescription || 'Produto Desconhecido'
+                                }}
                             </span>
 
                             <span class="text-xs text-surface-400 dark:text-surface-500 mt-2">
@@ -76,9 +76,15 @@ const formatDateTime = (dateString) => {
                     </div>
                 </div>
 
-                <p class="text-xs italic text-surface-500 dark:text-surface-400 mt-3 border-t border-surface-100 dark:border-surface-700 pt-2 line-clamp-2">
-                    **Equipa:** {{ item.teamDescription }} ({{ item.teamSectionDescription }})
-                </p>
+                <div class="flex justify-between items-start gap-4">
+                    <div
+                        class="text-xs italic text-surface-500 dark:text-surface-400 mt-3 border-t border-surface-100 dark:border-surface-700 pt-2 line-clamp-2">
+                        **Equipa:** {{ item.teamDescription }} ({{ item.teamSectionDescription }})
+                    </div>
+                    <div class="text-xs">
+                        <Button icon="pi pi-pencil" severity="secondary" @click="openEditDialog(item)" raised />
+                    </div>
+                </div>
 
             </div>
 
@@ -88,15 +94,10 @@ const formatDateTime = (dateString) => {
                 <p>Nenhum registo de produção encontrado.</p>
             </div>
         </div>
+
+        <!-- Diálogo de detalle -->
+        <TrackingVidragemDetailDialog v-model:visible="showDetailDialog" :item="selectedItem" />
+
+        <TrackingVidragemEditDialog v-model:visible="showEditDialog" :item="selectedItem" />
     </div>
 </template>
-
-<style scoped>
-/* Estilos para asegurar que las etiquetas Tag no se rompan y el scroll sea suave */
-.line-clamp-2 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-
-}
-</style>

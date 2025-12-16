@@ -5,11 +5,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -25,12 +28,11 @@ public class GlobalExceptionHandler {
                         status.value(),
                         message,
                         detail,
-                        LocalDateTime.now()
-                ));
+                        LocalDateTime.now()));
     }
 
     // Manejo específico: Validación de DTO con @Valid
-    @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
+    @ExceptionHandler({ MethodArgumentNotValidException.class, BindException.class })
     public ResponseEntity<ApiError> handleValidation(Exception ex) {
         String errors = "";
         if (ex instanceof MethodArgumentNotValidException manv) {
@@ -59,10 +61,34 @@ public class GlobalExceptionHandler {
     // Manejo específico: Violaciones de base de datos (constraint, unique, FK)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleDb(DataIntegrityViolationException ex) {
-        //String detail = ex.getMostSpecificCause().getMessage();
+        // String detail = ex.getMostSpecificCause().getMessage();
         String detail = DatabaseErrorMapper.getFriendlyMessage(ex);
         log.error("[DATABASE] Violación de integridad: {}", detail, ex);
         return buildError(HttpStatus.CONFLICT, "Erro na base de dados", detail);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleNotReadable(HttpMessageNotReadableException ex) {
+
+        Throwable cause = ex.getCause();
+
+        if (cause instanceof InvalidFormatException ife) {
+            String fieldName = ife.getPath().get(0).getFieldName();
+            String message = "Campo '" + fieldName + "' deve conter apenas números.";
+
+            log.warn("[FORMAT] {}", message);
+
+            return buildError(
+                    HttpStatus.BAD_REQUEST,
+                    "Formato inválido",
+                    message);
+        }
+
+        log.warn("[FORMAT] Corpo de requisição inválido.");
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                "Formato inválido no corpo da requisição",
+                ex.getMostSpecificCause().getMessage());
     }
 
     // Manejo automático y centralizado de excepciones no contempladas

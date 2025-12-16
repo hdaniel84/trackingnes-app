@@ -14,7 +14,7 @@ const model = ref([
             { label: 'Prensas', icon: 'pi pi-fw pi-chart-scatter', to: '/prensas' },
             { label: 'Vidragem', icon: 'pi pi-fw pi-bullseye', to: '/vidragem', class: 'rotated-icon' },
             { label: 'KeraJet', icon: 'pi pi-fw pi-print', to: '/uikit/table' },
-            { label: 'Forno Entrada', icon: 'pi pi-fw pi-gauge', to: '/uikit/list' },
+            { label: 'Forno Entrada', icon: 'pi pi-fw pi-gauge', to: '/forno-entrada' },
             { label: 'Forno Saída', icon: 'pi pi-fw pi-external-link', to: '/uikit/tree' },
             { label: 'Escolha', icon: 'pi pi-fw pi-eye', to: '/uikit/panel' },
             { label: 'Embalagem', icon: 'pi pi-fw pi-box', to: '/uikit/overlay' },

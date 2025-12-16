@@ -1,11 +1,11 @@
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useParameterStore } from '@/stores/parameterStore';
 import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
 import Select from 'primevue/select';
 
-defineProps({
+const props = defineProps({
   modelValue: {
     type: [Number, String, null],
     default: null
@@ -13,41 +13,42 @@ defineProps({
 });
 
 const emit = defineEmits(['update:modelValue']);
+const store = useParameterStore();
 
-const parametersStore = useParameterStore();
+// 🔹 Binding reactivo usando computed
+const selectedValue = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+});
 
-onMounted(() => {
-  if (parametersStore.items.length === 0) {
-    parametersStore.fetchAll();
+onMounted(async () => {
+  if (store.items.length === 0) {
+    await store.fetchAll();
   }
 });
 </script>
 
 <template>
-  <div>
-    <div v-if="parametersStore.loading">
-      <ProgressSpinner
-        style="width: 40px; height: 40px"
-        strokeWidth="8"
-        animationDuration=".5s"
-      />
-      <p class="text-xs text-gray-500 mt-1">Cargando...</p>
+  <div class="w-full">
+    <div v-if="store.loading" class="flex items-center justify-center py-2">
+      <ProgressSpinner style="width: 25px; height: 25px" strokeWidth="6" animationDuration=".5s" />
     </div>
 
-    <div v-else-if="parametersStore.error">
-      <Message severity="error">{{ parametersStore.error }}</Message>
+    <div v-else-if="store.error">
+      <Message severity="error" :closable="false" size="small">{{ store.error }}</Message>
     </div>
 
     <div v-else>
       <Select
-        class="mt-2 text-xs w-full"
-        :modelValue="modelValue"
-        @update:modelValue="emit('update:modelValue', $event)"
-        :options="parametersStore.items"
+        v-model="selectedValue"
+        :options="store.items"
         optionLabel="description"
         optionValue="id"
-        placeholder="Selecciona"
+        placeholder="Tipo"
         filter
+        showClear
+        fluid
+        class="w-full"
       />
     </div>
   </div>

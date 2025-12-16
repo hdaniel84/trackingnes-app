@@ -20,7 +20,6 @@ module.exports = {
         'vue/no-reserved-component-names': 'off',
         'vue/no-v-model-argument': 'off',
 
-        // Si quieres quitar esta también, dime
         'vue/component-tags-order': [
             'error',
             {

@@ -34,7 +34,7 @@ export const trackingPrensasSchema = z.object({
       error: 'Data de fim inválida'
     }),
 
-  comments: z.string().optional(),
+  comments: z.string().optional().nullable(),
 
   product: z
     .any()

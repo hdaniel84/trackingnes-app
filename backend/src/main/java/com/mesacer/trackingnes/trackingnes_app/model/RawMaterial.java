@@ -20,4 +20,8 @@ public class RawMaterial {
 
     @Column(name = "description", nullable = false, length = 50)
     private String description;
+
+    @ManyToOne
+    @JoinColumn(name = "id_section")
+    private Section section;
 }

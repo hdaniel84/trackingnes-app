@@ -18,6 +18,7 @@ public interface TrackingVidragemMapper {
     @Mapping(source = "rawMaterial.id", target = "rawMaterialId")
     @Mapping(source = "rawMaterial.sapCode", target = "rawMaterialSapCode")
     @Mapping(source = "rawMaterial.description", target = "rawMaterialDescription")
+    @Mapping(source = "rawMaterial.section.description", target = "rawMaterialSection")
 
     @Mapping(source = "product.id", target = "productId")
     @Mapping(source = "product.description", target = "productDescription")

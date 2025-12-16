@@ -49,6 +49,7 @@ public class TrackingVidragemDTO {
     private Long rawMaterialId;
     private String rawMaterialSapCode;          
     private String rawMaterialDescription;
+    private String rawMaterialSection;
     
     @NotNull
     @NotBlank

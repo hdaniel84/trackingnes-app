@@ -22,4 +22,17 @@ public class Product {
 
     @Column(name = "description", nullable = false, length = 100)
     private String description;
+
+    @OneToOne
+    @JoinColumn(name = "id_shape", nullable = false)
+    private ProductShape shape;
+
+    @OneToOne
+    @JoinColumn(name = "id_glass", nullable = false)
+    private ProductGlass glass;
+
+    @OneToOne
+    @JoinColumn(name = "id_decoration", nullable = false)
+    private ProductDecoration decoration;
+
 }

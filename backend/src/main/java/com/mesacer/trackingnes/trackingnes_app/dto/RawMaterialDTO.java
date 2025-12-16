@@ -7,4 +7,5 @@ public class RawMaterialDTO {
     private Long id;
     private String sapCode;
     private String description;
+    private String sectionDescription;
 }

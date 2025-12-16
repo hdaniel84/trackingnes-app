@@ -10,7 +10,7 @@ const ptPTLocale = {
     monthNamesShort: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"],
     today: 'Hoje',
     clear: 'Limpar',
-    dateFormat: 'dd/mm/yyyy',
+    dateFormat: 'dd/mm/yy',
     
     // Paginator (Usado en DataTable y otros)
     aria: {

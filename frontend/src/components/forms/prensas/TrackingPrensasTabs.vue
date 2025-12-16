@@ -79,15 +79,15 @@ const saveTitle = (press) => {
             <TabPanels>
                 <TabPanel v-for="press in presses" :key="press.id" :value="press.id.toString()">
                     <!-- 👇 Aquí aplicamos el color dinámico -->
-                    <div class="p-4 rounded-lg" :class="press.color">
-                        <div class="mb-5 ml-2">
-                            <h3 class="text-2xl font-bold text-surface-900 dark:text-surface-0">
+                    <div class="p-2 rounded-lg" :class="press.color">
+                        <div class="mb-3 ml-2">
+                            <h4 class="text-2xl font-bold text-surface-900 dark:text-surface-0">
                                 <i class="pi pi-chart-scatter mr-2" style="font-size: 2rem"></i>
                                 Prensas - Registo de produção ({{ press.name }})
-                            </h3>
+                            </h4>
                         </div>
 
-                        <TrackingPrensasForm :pressName="press.name" />
+                        <TrackingPrensasForm :pressName="press.name" mode="create" />
                     </div>
                 </TabPanel>
             </TabPanels>

@@ -16,4 +16,8 @@ public class ProductDTO {
     @NotBlank
     @NotNull(message = "Campo obrigatório")
     private String description;
+
+    private String shapeId;
+    private String glassId;
+    private String decorationId;
 }

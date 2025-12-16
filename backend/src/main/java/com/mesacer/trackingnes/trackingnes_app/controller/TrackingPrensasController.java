@@ -35,6 +35,15 @@ public class TrackingPrensasController {
                 .body(page.getContent());
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<Page<TrackingPrensasDTO>> findByCodigoProduto(
+            @RequestParam String codigoProduto,
+            @PageableDefault(size = 10, sort = "startTime", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<TrackingPrensasDTO> page = service.findByProductCodigoProduto(codigoProduto, pageable);
+        return ResponseEntity.ok(page);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<TrackingPrensasDTO> getById(@PathVariable Long id) {
         TrackingPrensasDTO dto = service.findById(id);

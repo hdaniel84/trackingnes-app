@@ -37,6 +37,12 @@ public class TrackingPrensasServiceImpl implements TrackingPrensasService {
     }
 
     @Override
+    public Page<TrackingPrensasDTO> findByProductCodigoProduto(String codigoProduto, Pageable pageable) {
+        return repository.findByProductCodigoProduto(codigoProduto, pageable)
+                .map(mapper::toDTO); // mapea cada entidad a DTO
+    }
+
+    @Override
     public TrackingPrensasDTO findById(Long id) {
         return repository.findById(id)
                 .map(mapper::toDTO)
@@ -47,7 +53,7 @@ public class TrackingPrensasServiceImpl implements TrackingPrensasService {
     public TrackingPrensasDTO save(TrackingPrensasDTO dto) {
         TrackingPrensas entity = mapper.toEntity(dto);
 
-         // asegurar relación bidireccional
+        // asegurar relación bidireccional
         if (entity.getParameters() != null) {
             entity.getParameters().forEach(p -> p.setTrackingPrensas(entity));
         }
