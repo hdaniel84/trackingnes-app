@@ -16,4 +16,6 @@ public class EquipmentDTO {
     private Long sectionId;
 
     private String sectionDescription;
+
+    private Boolean mandatory;
 }

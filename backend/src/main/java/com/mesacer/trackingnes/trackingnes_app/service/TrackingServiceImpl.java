@@ -15,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,22 +25,6 @@ public class TrackingServiceImpl implements TrackingService {
     private final TrackingMapper mapper;
     @PersistenceContext
     private EntityManager entityManager;
-
-    /*
-     * @Override
-     * public List<TrackingResponseDTO> findAll() {
-     * return repository.findAll()
-     * .stream()
-     * .map(mapper::toResponseDTO)
-     * .toList();
-     * }
-     * 
-     * @Override
-     * public Page<TrackingResponseDTO> findAll(Pageable pageable) {
-     * return repository.findAll(pageable)
-     * .map(mapper::toResponseDTO);
-     * }
-     */
     
     @Override
     public Page<TrackingResponseDTO> getAll(Long phaseId, Pageable pageable) {

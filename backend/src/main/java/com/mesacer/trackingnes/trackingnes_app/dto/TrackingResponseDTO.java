@@ -15,6 +15,7 @@ public class TrackingResponseDTO {
     private ProductDTO product;
     private EquipmentDTO equipment;
     private PhaseDTO phase;
+    private List<EquipmentDTO> auxiliaryEquipments;
 
     private Long logisticUnit;
     private Integer quantity;

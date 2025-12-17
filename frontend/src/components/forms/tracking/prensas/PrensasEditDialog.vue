@@ -15,7 +15,7 @@ const emit = defineEmits(['update:visible']);
     :visible="props.visible" 
     @update:visible="emit('update:visible', $event)" 
     modal 
-    header="Editar Registo" 
+    header="Editar Registro"
     :style="{ width: '90vw', maxWidth: '1000px' }"
     :breakpoints="{ '960px': '95vw' }"
     dismissableMask

@@ -16,6 +16,7 @@ public interface TrackingMapper {
     @Mapping(target = "equipment", source = "equipmentId")
     @Mapping(target = "phase", source = "phaseId")
     @Mapping(target = "trackingSource", source = "trackingSourceId")
+    @Mapping(target = "auxiliaryEquipments", source = "auxiliaryEquipmentIds")
 
     @Mapping(target = "createdDate", ignore = true)
     @Mapping(target = "createdBy", ignore = true)

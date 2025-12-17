@@ -32,4 +32,7 @@ public class Equipment {
     @JoinColumn(name = "id_section", referencedColumnName = "id_section", nullable = false)
     private Section section;
 
+    @Column(name = "mandatory")
+    private Boolean mandatory;
+
 }

@@ -1,5 +1,7 @@
 package com.mesacer.trackingnes.trackingnes_app.dto;
 
+import java.time.LocalDateTime;
+
 import lombok.Data;
 
 @Data
@@ -14,4 +16,5 @@ public class TrackingParameterResponseDTO {
     private String valueString;
     private Double valueNumber;
     private Boolean valueBool;
+    private LocalDateTime valueDate;
 }

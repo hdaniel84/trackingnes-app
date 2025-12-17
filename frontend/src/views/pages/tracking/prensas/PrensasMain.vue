@@ -5,16 +5,15 @@ import PrensasList from '@/components/forms/tracking/prensas/PrensasList.vue';
 
 <template>
     <Fluid>
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
-            
-            <div class="lg:col-span-9">
-                <PrensasTabs />
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 lg:items-stretch">
+            <div class="lg:col-span-9 flex">
+                <PrensasTabs class="flex-1" />
             </div>
 
-            <div class="lg:col-span-3">
-                <PrensasList />
+            <div class="lg:col-span-3 flex">
+                <PrensasList class="flex-1" />
             </div>
-            
         </div>
+
     </Fluid>
 </template>

@@ -21,6 +21,7 @@ import ShiftsSelect from '@/components/forms/global/ShiftsSelect.vue';
 import EquipmentsSelect from '@/components/forms/global/EquipmentsSelect.vue';
 import ParametersForm from '@/components/forms/global/ParametersForm.vue';
 import RawMaterialsForm from '@/components/forms/global/RawMaterialsForm.vue';
+import AuxiliaryEquipmentsSelect from '@/components/forms/global/AuxiliaryEquipmentsSelect.vue';
 
 const props = defineProps({
   item: Object,
@@ -36,8 +37,15 @@ const { notifySuccess, notifyError } = useNotify();
 const { showErrorDialog } = useErrorDialog();
 
 // Vee-Validate
-const { handleSubmit, errors, setValues, isSubmitting, resetForm } = useForm({
-  validationSchema: toTypedSchema(trackingSchema)
+const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta } = useForm({
+  validationSchema: toTypedSchema(trackingSchema),
+  validateOnMount: false,
+  initialValues: {
+    startTime: new Date(),
+    rawMaterials: [{ id: null, rawMaterialId: null, value: '' }],
+    parameters: [],
+    auxiliaryEquipmentIds: []
+  }
 });
 
 // Campos
@@ -50,8 +58,9 @@ const { value: team } = useField('team');
 const { value: shift } = useField('shift');
 const { value: equipment } = useField('equipment');
 const { value: quantity } = useField('quantity');
-const { value: parameters } = useField('parameters', { initialValue: [] });
-const { value: rawMaterials } = useField('rawMaterials', { initialValue: [] });
+const { value: parameters } = useField('parameters');
+const { value: rawMaterials } = useField('rawMaterials');
+const { value: auxiliaryEquipmentIds } = useField('auxiliaryEquipmentIds');
 
 
 // WATCH: Cargar datos al Editar
@@ -67,6 +76,7 @@ watch(() => props.item, (val) => {
       team: val.team || null,
       shift: val.shift || null,
       equipment: val.equipment || null,
+      auxiliaryEquipmentIds: (val.auxiliaryEquipments || []).map(e => e.id),
 
       rawMaterials: (val.rawMaterials || []).map(r => ({
         id: r.id,
@@ -77,24 +87,37 @@ watch(() => props.item, (val) => {
       parameters: (val.parameters || []).map(p => ({
         id: p.id,
         parameterId: p.parameterId,
-        valueString: p.valueString || ''
+        valueString: p.valueString || '',
+        valueNumber: p.valueNumber,
+        valueBool: p.valueBool,
+        valueDate: p.valueDate ? new Date(p.valueDate) : null
       }))
     });
   }
 }, { immediate: true });
 
 onMounted(() => {
-  if (props.mode === 'create') {
-    startTime.value = new Date();
+  //if (props.mode === 'create') {
+    //startTime.value = new Date();
     // Inicializar fila vacía obligatoria
-    rawMaterials.value = [{ id: null, rawMaterialId: null, value: '' }];
-  }
+    //rawMaterials.value = [{ id: null, rawMaterialId: null, value: '' }];
+  //}
 });
 
 const onSubmit = handleSubmit(async (values) => {
   try {
     const parametersPayload = (parameters.value || []).map(p => {
-      const paramDto = { parameterId: p.parameterId, valueString: p.valueString };
+      // 1. Clonamos el objeto básico
+      const paramDto = {
+        parameterId: p.parameterId,
+        // Enviamos todos los campos, el backend sabrá cual usar o estarán null
+        valueString: p.valueString,
+        valueNumber: p.valueNumber,
+        valueBool: p.valueBool,
+        // 2. Formateamos fecha si existe (necesitamos enviarla como ISO string)
+        valueDate: p.valueDate ? new Date(p.valueDate).toISOString() : null
+      };
+
       if (p.id) paramDto.id = p.id;
       return paramDto;
     });
@@ -115,6 +138,7 @@ const onSubmit = handleSubmit(async (values) => {
       teamId: values.team?.id,
       shiftId: values.shift?.id,
       equipmentId: values.equipment?.id,
+      auxiliaryEquipmentIds: values.auxiliaryEquipmentIds,
       phaseId: CURRENT_PHASE_ID,
       rawMaterials: rawMaterialsPayload,
       parameters: parametersPayload
@@ -140,9 +164,10 @@ const onSubmit = handleSubmit(async (values) => {
           endTime: null,      // Limpia el DatePicker
 
           // 3. CAMPOS QUE ACTUALIZAMOS
-          startTime: new Date(), 
+          startTime: new Date(),
           parameters: values.parameters,
-          rawMaterials: values.rawMaterials 
+          rawMaterials: values.rawMaterials,
+          auxiliaryEquipmentIds: values.auxiliaryEquipmentIds
         }
       });
     } else {
@@ -246,10 +271,14 @@ const onSubmit = handleSubmit(async (values) => {
             <span class="font-bold text-surface-700 dark:text-surface-200 text-sm flex items-center gap-2">
               <i class="pi pi-box"></i> Matérias Primas
             </span>
-            <span class="text-xs text-red-500" v-if="errors.rawMaterials">* Obrigatório</span>
+            <span class="text-xs text-red-500" v-if="errors.rawMaterials && meta.touched">* Obrigatório</span>
           </div>
+
           <RawMaterialsForm v-model="rawMaterials" :phaseId="CURRENT_PHASE_ID" />
-          <small v-if="errors.rawMaterials" class="text-red-500 mt-2 block text-xs">{{ errors.rawMaterials }}</small>
+
+          <small v-if="errors.rawMaterials && meta.touched" class="text-red-500 mt-2 block text-xs">
+            {{ errors.rawMaterials }}
+          </small>
         </div>
 
         <div
@@ -264,6 +293,11 @@ const onSubmit = handleSubmit(async (values) => {
         </div>
       </div>
 
+      <div class="col-span-12">
+        <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Equipamentos Auxiliares</label>
+        <AuxiliaryEquipmentsSelect v-model="auxiliaryEquipmentIds" :filterSection="filterSectionVar" />
+      </div>
+
       <div>
         <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Observações / Comentários</label>
         <Textarea v-model="comments" rows="3" class="w-full" placeholder="Informação adicional relevante..." />
@@ -274,7 +308,6 @@ const onSubmit = handleSubmit(async (values) => {
       <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pb-2">
         <Button label="Cancelar" icon="pi pi-times" severity="secondary" text @click="$emit('cancel')"
           class="w-full sm:w-auto" />
-
         <Button type="submit" label="Guardar Registo" icon="pi pi-check" :loading="isSubmitting"
           class="w-full sm:w-auto px-6 font-bold" />
       </div>

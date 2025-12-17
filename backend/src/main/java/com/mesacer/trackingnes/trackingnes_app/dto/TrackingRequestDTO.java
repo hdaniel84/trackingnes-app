@@ -25,6 +25,8 @@ public class TrackingRequestDTO {
     @NotNull(message = "El ID de la máquina es obligatorio")
     private Long equipmentId;
 
+    private List<Long> auxiliaryEquipmentIds;
+
     // Asumo que la fase puede venir por defecto o ser seleccionada
     private Long phaseId;
 

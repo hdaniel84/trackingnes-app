@@ -49,7 +49,7 @@ const openDetailDialog = (item) => {
       <Message severity="error">{{ store.fetchError }}</Message>
     </div>
 
-    <div v-else class="flex flex-col gap-4 max-h-[80vh] overflow-y-auto pr-2">
+    <div v-else class="flex flex-col gap-4 max-h-[100vh] overflow-y-auto pr-2">
       <div v-for="item in (store.items || [])" :key="item.id" 
         class="bg-surface-50 dark:bg-surface-800 p-3 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm transition duration-300 hover:shadow-md hover:bg-surface-100 dark:hover:bg-surface-700">
         

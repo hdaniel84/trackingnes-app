@@ -18,18 +18,29 @@ const selectedEquipment = computed({
   set: (val) => emit('update:modelValue', val)
 });
 
+// 🔹 MODIFICACIÓN AQUÍ: Filtramos por mandatory === true
 const filteredEquipments = computed(() => {
   const items = store.items;
-  if (!props.filterSection || items.length === 0) return items;
+  if (items.length === 0) return [];
   
-  return items.filter(eq => 
-    eq.sectionDescription?.toLowerCase().includes(props.filterSection.toLowerCase())
-  );
+  return items.filter(eq => {
+    // 1. Condición estricta: Solo mostrar equipos principales (Mandatory)
+    const isMain = eq.mandatory === true;
+
+    // 2. Condición opcional: Filtrar por sección si el prop existe
+    const matchesSection = props.filterSection 
+        ? eq.sectionDescription?.toLowerCase().includes(props.filterSection.toLowerCase())
+        : true;
+
+    // Ambas deben cumplirse
+    return isMain && matchesSection;
+  });
 });
 
 onMounted(async () => {
+  // Aseguramos que el store cargue los datos si está vacío
   if (store.items.length === 0) {
-    await store.fetchEquipments();
+    await store.fetchAll();
   }
 });
 </script>
@@ -47,7 +58,7 @@ onMounted(async () => {
 
     <div v-else>
       <label for="equipmentSelect" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">
-        Equipamento
+        Equipamento Principal
       </label>
       
       <Select
@@ -61,7 +72,14 @@ onMounted(async () => {
         showClear
         fluid
         class="w-full"
-      />
+      >
+         <template #option="slotProps">
+            <div class="flex flex-col">
+              <span class="font-bold text-sm">{{ slotProps.option.description }}</span>
+              <span class="text-xs text-surface-500">{{ slotProps.option.sapCode }}</span>
+           </div>
+         </template>
+      </Select>
     </div>
   </div>
 </template>

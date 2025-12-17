@@ -1,3 +1,7 @@
 import http from './http'; 
 
-export const getEquipments = () => http.get('/equipments');
+const EquipmentService = {
+  getAll: () => http.get('/equipments'),
+};
+
+export default EquipmentService;

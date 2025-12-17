@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
 // HELPER ROBUSTO:
-// Usamos z.any() en lugar de z.object() para evitar que Zod lance 
-// un error de tipo crítico cuando el valor es null inicial.
-// Luego usamos .refine para asegurar que tenga datos.
 const requiredObject = (message) =>
   z.any()
     .refine((val) => val && val.id, {
@@ -48,6 +45,10 @@ export const trackingSchema = z.object({
   shift: requiredObject('Turno é obrigatório'),
   equipment: requiredObject('Equipamento é obrigatório'),
 
+  auxiliaryEquipmentIds: z
+    .array(z.number())
+    .optional(),
+
   rawMaterials: z
     .array(
       z.object({
@@ -75,14 +76,30 @@ export const trackingSchema = z.object({
   parameters: z
     .array(
       z.object({
-        parameterId: z.number({
-          required_error: 'Tipo de parâmetro é obrigatório',
-          invalid_type_error: 'Selecione um parâmetro válido'
-        }),
-        valueString: z.string().min(1, {
-          message: 'Valor do parâmetro é obrigatório'
-        })
+        parameterId: z.number({ required_error: 'Selecione um parâmetro' }),
+
+        // Hacemos opcionales todos los campos individuales
+        valueString: z.string().optional().nullable(),
+        valueNumber: z.number().optional().nullable(),
+        valueBool: z.boolean().optional().nullable(),
+        valueDate: z.date().optional().nullable().or(z.string().optional().nullable())
       })
+        // SUPER REFINE: Validamos que AL MENOS UNO tenga valor
+        .refine((data) => {
+          // Si es booleano, true o false son valores validos.
+          if (data.valueBool !== undefined && data.valueBool !== null) return true;
+          // Si es numero
+          if (data.valueNumber !== undefined && data.valueNumber !== null) return true;
+          // Si es fecha
+          if (data.valueDate) return true;
+          // Si es string
+          if (data.valueString && data.valueString.trim().length > 0) return true;
+
+          return false;
+        }, {
+          message: "O valor é obrigatório",
+          path: ['parameterId'] // Mostramos el error cerca del select si falla
+        })
     )
     .optional()
     // IMPORTANTE: Sin .default([]) para no chocar con VeeValidate
