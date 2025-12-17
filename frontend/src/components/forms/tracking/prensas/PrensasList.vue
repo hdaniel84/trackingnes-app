@@ -17,9 +17,10 @@ const { formatDateTime } = useFormatters(); // Usamos el formateador
 const selectedItem = ref(null);
 const showEditDialog = ref(false);
 const showDetailDialog = ref(false);
+const CURRENT_PHASE_ID = 1; // 1 = Prensas
 
 onMounted(() => {
-  store.fetchAll({ page: 0, size: 10, sort: 'startTime,desc' });
+  store.fetchAll({ page: 0, size: 10, sort: 'id,desc', phaseId: CURRENT_PHASE_ID });
 });
 
 const openEditDialog = (item) => {
@@ -69,7 +70,7 @@ const openDetailDialog = (item) => {
                      {{ item.product?.description || 'Produto Desconhecido' }}
                   </div>
 
-                  <div class="text-sm text-surface-600 dark:text-surface-300 flex items-center">
+                  <div class="text-xs text-surface-500 dark:text-surface-400 flex items-center">
                     <i class="pi pi-car mr-2 text-xs"></i> 
                     Carro: {{ item.logisticUnit || 'N/A' }}
                   </div>

@@ -9,9 +9,11 @@ import java.util.List;
 
 public interface TrackingService {
 
-    List<TrackingResponseDTO> findAll();
+    //List<TrackingResponseDTO> findAll();
 
-    Page<TrackingResponseDTO> findAll(Pageable pageable);
+    //Page<TrackingResponseDTO> findAll(Pageable pageable);
+
+    Page<TrackingResponseDTO> getAll(Long phaseId, Pageable pageable);
 
     TrackingResponseDTO findById(Long id);
 
@@ -21,26 +23,3 @@ public interface TrackingService {
 
     void delete(Long id);
 }
-/* 
-package com.mesacer.trackingnes.trackingnes_app.service;
-
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
-import com.mesacer.trackingnes.trackingnes_app.dto.TrackingDTO;
-
-public interface TrackingService {
-
-    List<TrackingDTO> findAll();
-
-    Page<TrackingDTO> findAll(Pageable pageable);
-
-    TrackingDTO findById(Long id);
-
-    TrackingDTO save(TrackingDTO dto);
-
-    void delete(Long id);
-}
-    */

@@ -56,17 +56,19 @@ public class Tracking {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
-    @ManyToOne
+    // RELACIÓN RECURSIVA (Self-Join)
+    @ManyToOne(fetch = FetchType.LAZY) // LAZY es obligatorio aquí para performance
     @JoinColumn(name = "id_tracking_source")
+    @ToString.Exclude // Evita bucles infinitos en los logs de Lombok
     private Tracking trackingSource;
 
     @Column(columnDefinition = "TEXT")
     private String comments;
 
-    @OneToMany(mappedBy = "tracking", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "tracking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<TrackingRawMaterial> rawMaterials = new ArrayList<>();
 
-    @OneToMany(mappedBy = "tracking", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "tracking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<TrackingParameter> parameters = new ArrayList<>();
 
     @CreatedDate

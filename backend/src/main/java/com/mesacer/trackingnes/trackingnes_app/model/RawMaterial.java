@@ -24,4 +24,12 @@ public class RawMaterial {
     @ManyToOne
     @JoinColumn(name = "id_section")
     private Section section;
+
+    @ManyToOne
+    @JoinColumn(name = "id_phase")
+    private Phase phase;
+
+    @Column(name = "mandatory")
+    private Boolean mandatory;
+
 }

@@ -9,7 +9,8 @@ const props = defineProps({
   modelValue: {
     type: [Number, String, null],
     default: null
-  }
+  },
+  phaseId: { type: Number, default: null }
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -19,6 +20,16 @@ const store = useParameterStore();
 const selectedValue = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
+});
+
+// 🔹 Lógica de Filtrado por Fase
+const filteredItems = computed(() => {
+  const items = store.items;
+  // Si no nos pasan phaseId, mostramos todos (o ninguno, según prefieras)
+  if (!props.phaseId) return items;
+
+  // Filtramos comparando el ID de la fase anidada
+  return items.filter(item => item.phase?.id === props.phaseId);
 });
 
 onMounted(async () => {
@@ -39,17 +50,8 @@ onMounted(async () => {
     </div>
 
     <div v-else>
-      <Select
-        v-model="selectedValue"
-        :options="store.items"
-        optionLabel="description"
-        optionValue="id"
-        placeholder="Tipo"
-        filter
-        showClear
-        fluid
-        class="w-full"
-      />
+      <Select v-model="selectedValue" :options="filteredItems" optionLabel="description" optionValue="id"
+        placeholder="Tipo" filter showClear fluid class="w-full" />
     </div>
   </div>
 </template>

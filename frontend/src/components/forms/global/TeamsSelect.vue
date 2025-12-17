@@ -13,13 +13,23 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 const store = useTeamStore();
 
-// 🔹 Binding bidireccional limpio
+// 🔹 MAGIA AQUÍ: Enriquecimiento de datos
 const selectedTeam = computed({
-  get: () => props.modelValue,
+  get: () => {
+    // Si no hay valor seleccionado, devolvemos null
+    if (!props.modelValue) return null;
+
+    // Intentamos encontrar este equipo en la lista cargada del Store (que tiene todos los datos)
+    const foundInStore = store.items.find(t => t.id === props.modelValue.id);
+
+    // Si lo encontramos en el store, devolvemos el COMPLETO (con sectionDescription).
+    // Si no (ej: store cargando), devolvemos el que nos pasó el padre.
+    return foundInStore || props.modelValue;
+  },
   set: (val) => emit('update:modelValue', val)
 });
 
-// 🔹 Filtro
+// Filtro (Igual que antes)
 const filteredTeams = computed(() => {
   const items = store.items;
   if (!props.filterSection || items.length === 0) return items;
@@ -48,16 +58,17 @@ onMounted(async () => {
     </div>
 
     <div v-else>
-      <label for="teamSelect" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">
+      <label for="teamSelect" class="block text-xs font-medium text-surface-500 mb-1 ml-1">
         Equipa
       </label>
+      
       <Select
         id="teamSelect"
         v-model="selectedTeam"
         :options="filteredTeams"
         optionLabel="description"
-        placeholder="Seleciona equipa"
         dataKey="id" 
+        placeholder="Seleciona equipa"
         filter
         :filterFields="['description', 'sectionDescription']"
         showClear
@@ -74,7 +85,9 @@ onMounted(async () => {
         <template #value="slotProps">
           <div v-if="slotProps.value" class="flex items-center gap-2">
             <span>{{ slotProps.value.description }}</span>
-            <span class="text-surface-400 text-sm">({{ slotProps.value.sectionDescription }})</span>
+            <span class="text-surface-400 text-sm" v-if="slotProps.value.sectionDescription">
+                ({{ slotProps.value.sectionDescription }})
+            </span>
           </div>
           <span v-else>{{ slotProps.placeholder }}</span>
         </template>

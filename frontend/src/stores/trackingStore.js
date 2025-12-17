@@ -19,8 +19,8 @@ export const useTrackingStore = defineStore('tracking', {
   }),
 
   actions: {
-    // 🔹 MODIFICADO: Lectura de headers de paginación
-    async fetchAll({ page = 0, size = 10, sort = 'startTime,desc' } = {}) {
+    //  Lectura de headers de paginación
+    async fetchAll({ page = 0, size = 10, sort = 'startTime,desc', phaseId = null } = {}) {
       this.loading = true;
       this.fetchError = null;
       
@@ -29,7 +29,11 @@ export const useTrackingStore = defineStore('tracking', {
       this.size = size;
 
       try {
-        const response = await TrackingService.getAll({ page, size, sort });
+
+        const params = { page, size, sort };
+        if (phaseId) params.phaseId = phaseId;
+
+        const response = await TrackingService.getAll(params);
         
         // 1. El cuerpo es la lista de items (ResponseDTOs)
         this.items = response.data;

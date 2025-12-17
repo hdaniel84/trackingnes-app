@@ -12,6 +12,7 @@ import InputNumber from 'primevue/inputnumber';
 import DatePicker from 'primevue/datepicker';
 import Textarea from 'primevue/textarea';
 import Button from 'primevue/button';
+import Divider from 'primevue/divider'; // Importante para separar secciones
 
 // Componentes Personalizados
 import ProductSelect from '@/components/forms/global/ProductSelect.vue';
@@ -19,11 +20,15 @@ import TeamsSelect from '@/components/forms/global/TeamsSelect.vue';
 import ShiftsSelect from '@/components/forms/global/ShiftsSelect.vue';
 import EquipmentsSelect from '@/components/forms/global/EquipmentsSelect.vue';
 import ParametersForm from '@/components/forms/global/ParametersForm.vue';
+import RawMaterialsForm from '@/components/forms/global/RawMaterialsForm.vue';
 
 const props = defineProps({
   item: Object,
   mode: { type: String, default: 'create' }
 });
+
+const emit = defineEmits(['success', 'cancel']);
+const CURRENT_PHASE_ID = 1; // 1 = Prensas
 
 const store = useTrackingStore();
 const filterSectionVar = ref('prensas');
@@ -31,7 +36,7 @@ const { notifySuccess, notifyError } = useNotify();
 const { showErrorDialog } = useErrorDialog();
 
 // Vee-Validate
-const { handleSubmit, errors, setValues } = useForm({
+const { handleSubmit, errors, setValues, isSubmitting, resetForm } = useForm({
   validationSchema: toTypedSchema(trackingSchema)
 });
 
@@ -40,14 +45,16 @@ const { value: logisticUnit } = useField('logisticUnit');
 const { value: startTime } = useField('startTime');
 const { value: endTime } = useField('endTime');
 const { value: comments } = useField('comments');
-const { value: product } = useField('product');   // UI guarda el Objeto completo
-const { value: team } = useField('team');         // UI guarda el Objeto completo
-const { value: shift } = useField('shift');       // UI guarda el Objeto completo
-const { value: equipment } = useField('equipment'); // UI guarda el Objeto completo
+const { value: product } = useField('product');
+const { value: team } = useField('team');
+const { value: shift } = useField('shift');
+const { value: equipment } = useField('equipment');
 const { value: quantity } = useField('quantity');
 const { value: parameters } = useField('parameters', { initialValue: [] });
+const { value: rawMaterials } = useField('rawMaterials', { initialValue: [] });
 
-// WATCH: Cargar datos al Editar (Mapping ResponseDTO -> Form State)
+
+// WATCH: Cargar datos al Editar
 watch(() => props.item, (val) => {
   if (val) {
     setValues({
@@ -56,18 +63,21 @@ watch(() => props.item, (val) => {
       endTime: val.endTime ? new Date(val.endTime) : null,
       comments: val.comments,
       quantity: val.quantity,
-
-      // Como tu ResponseDTO devuelve objetos completos, los asignamos directo a los selects
       product: val.product || null,
       team: val.team || null,
       shift: val.shift || null,
       equipment: val.equipment || null,
 
-      // Mapeamos los parámetros para asegurar estructura visual
+      rawMaterials: (val.rawMaterials || []).map(r => ({
+        id: r.id,
+        rawMaterialId: r.rawMaterialId,
+        value: r.value || ''
+      })),
+
       parameters: (val.parameters || []).map(p => ({
         id: p.id,
         parameterId: p.parameterId,
-        valueString: p.valueString || '' 
+        valueString: p.valueString || ''
       }))
     });
   }
@@ -76,51 +86,71 @@ watch(() => props.item, (val) => {
 onMounted(() => {
   if (props.mode === 'create') {
     startTime.value = new Date();
+    // Inicializar fila vacía obligatoria
+    rawMaterials.value = [{ id: null, rawMaterialId: null, value: '' }];
   }
 });
 
-// ONSUBMIT: Transformar Datos (Form State -> RequestDTO)
 const onSubmit = handleSubmit(async (values) => {
   try {
-    // CORRECCIÓN: Usamos (parameters.value || []) para evitar el error si es null
     const parametersPayload = (parameters.value || []).map(p => {
-      const paramDto = {
-        parameterId: p.parameterId,
-        valueString: p.valueString
-      };
+      const paramDto = { parameterId: p.parameterId, valueString: p.valueString };
       if (p.id) paramDto.id = p.id;
       return paramDto;
     });
 
-    // 2. Construimos el Payload con IDs (Flat DTO)
+    const rawMaterialsPayload = (rawMaterials.value || []).map(r => {
+      const dto = { rawMaterialId: r.rawMaterialId, value: r.value };
+      if (r.id) dto.id = r.id;
+      return dto;
+    });
+
     const payload = {
       logisticUnit: values.logisticUnit,
       startTime: values.startTime,
       endTime: values.endTime,
       comments: values.comments,
       quantity: values.quantity,
-
-      // AQUÍ LA CLAVE: Extraemos solo los IDs de los objetos seleccionados
       productId: values.product?.id,
       teamId: values.team?.id,
       shiftId: values.shift?.id,
       equipmentId: values.equipment?.id,
-      phaseId: 1, // Hardcodeado o dinámico según tu lógica
-
-      // Agregamos los parámetros transformados
+      phaseId: CURRENT_PHASE_ID,
+      rawMaterials: rawMaterialsPayload,
       parameters: parametersPayload
     };
 
-    // 3. Enviamos al Store (Store llama al API)
     if (props.mode === 'create') {
       await store.create(payload);
       notifySuccess('Registo criado com sucesso');
+
+      resetForm({
+        values: {
+          // 1. CAMPOS QUE CONSERVAMOS (Contexto)
+          // El usuario suele seguir produciendo lo mismo en el mismo turno
+          equipment: values.equipment,
+          product: values.product,
+          team: values.team,
+          shift: values.shift,
+
+          // 2. CAMPOS QUE LIMPIAMOS
+          logisticUnit: null, // Limpia el InputNumber
+          quantity: null,     // Limpia el InputNumber
+          comments: null,     // Limpia el Textarea
+          endTime: null,      // Limpia el DatePicker
+
+          // 3. CAMPOS QUE ACTUALIZAMOS
+          startTime: new Date(), 
+          parameters: values.parameters,
+          rawMaterials: values.rawMaterials 
+        }
+      });
     } else {
       await store.update(props.item.id, payload);
       notifySuccess('Registo atualizado com sucesso');
+      emit('success');
     }
-
-    // Opcional: Cerrar diálogo o limpiar form
+    //emit('success'); // Avisar al padre para cerrar el modal
   } catch (err) {
     const message = err?.response?.data?.message || err?.message || 'Erro inesperado';
     notifyError('Erro', message);
@@ -130,75 +160,125 @@ const onSubmit = handleSubmit(async (values) => {
 </script>
 
 <template>
-  <div class="w-full max-w-7xl mx-auto">
-    <div
-      class="bg-surface-0 dark:bg-surface-900 p-8 rounded-xl shadow-lg border border-surface-200 dark:border-surface-700">
-      <form @submit.prevent="onSubmit">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+  <div class="w-full">
+    <form @submit.prevent="onSubmit" class="flex flex-col gap-6">
 
-          <div class="col-span-12 md:col-span-6">
-            <EquipmentsSelect v-model="equipment" class="w-full" :filterSection="filterSectionVar" />
-            <small v-if="errors.equipment" class="text-red-500 mt-1 block">{{ errors.equipment }}</small>
-          </div>
-
-          <div class="col-span-12 md:col-span-6">
-            <ProductSelect v-model="product" class="w-full" />
-            <small v-if="errors.product" class="text-red-500 mt-1 block">{{ errors.product }}</small>
-          </div>
-
-          <div class="col-span-12 md:col-span-6">
-            <label class="block font-semibold mb-2">Unidade logística</label>
-            <InputNumber v-model="logisticUnit" :useGrouping="false" fluid class="w-full" placeholder="Ex: 123" />
-            <small v-if="errors.logisticUnit" class="text-red-500 mt-1 block">{{ errors.logisticUnit }}</small>
-          </div>
-
-          <div class="col-span-12 md:col-span-6">
-            <label class="block font-semibold mb-2">Quantidade peças</label>
-            <InputNumber v-model="quantity" :useGrouping="false" fluid class="w-full" placeholder="Ex: 360" />
-            <small v-if="errors.quantity" class="text-red-500 mt-1 block">{{ errors.quantity }}</small>
-          </div>
-
-          <div class="col-span-12 md:col-span-6">
-            <label class="block font-semibold mb-2">Inicio</label>
-            <DatePicker v-model="startTime" showIcon showTime fluid class="w-full" />
-            <small v-if="errors.startTime" class="text-red-500 mt-1 block">{{ errors.startTime }}</small>
-          </div>
-
-          <div class="col-span-12 md:col-span-6">
-            <label class="block font-semibold mb-2">Fim</label>
-            <DatePicker v-model="endTime" showIcon showTime fluid class="w-full" />
-            <small v-if="errors.endTime" class="text-red-500 mt-1 block">{{ errors.endTime }}</small>
-          </div>
-
-          <div class="col-span-12 border-t border-surface-200 my-2"></div>
-
-          <div class="col-span-12 md:col-span-3">
-            <TeamsSelect v-model="team" :filterSection="filterSectionVar" class="w-full" />
-            <small v-if="errors.team" class="text-red-500 mt-1 block">{{ errors.team }}</small>
-          </div>
-
-          <div class="col-span-12 md:col-span-3">
-            <ShiftsSelect v-model="shift" class="w-full" />
-            <small v-if="errors.shift" class="text-red-500 mt-1 block">{{ errors.shift }}</small>
-          </div>
-
-          <div class="col-span-12 mt-2 md:col-span-6">
-            <label class="block font-semibold mb-2">Observações</label>
-            <Textarea v-model="comments" rows="4" class="w-full" />
-          </div>
-
-          <div class="col-span-12 mt-2 md:col-span-6">
-            <div class="block font-semibold mb-2">Parâmetros de Produção</div>
-            <small v-if="errors.parameters" class="text-red-500 mt-1 block">{{ errors.parameters }}</small>
-            <ParametersForm v-model="parameters" />
-          </div>
-
-          <div class="col-span-12 flex justify-end mt-6">
-            <Button type="submit" label="Guardar Registo" icon="pi pi-check" class="w-full md:w-auto px-8" />
-          </div>
-
+      <div class="bg-surface-50 dark:bg-surface-800 p-5 rounded-xl border border-surface-200 dark:border-surface-700">
+        <div
+          class="flex items-center gap-2 mb-4 text-primary-600 dark:text-primary-400 font-bold uppercase text-xs tracking-wider">
+          <i class="pi pi-box"></i> Identificação da Produção
         </div>
-      </form>
-    </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+          <div class="col-span-12 md:col-span-6">
+            <EquipmentsSelect v-model="equipment" :filterSection="filterSectionVar" />
+            <small v-if="errors.equipment" class="text-red-500 mt-1 flex items-center gap-1 text-xs">
+              <i class="pi pi-exclamation-circle"></i> {{ errors.equipment }}
+            </small>
+          </div>
+
+          <div class="col-span-12 md:col-span-6">
+            <ProductSelect v-model="product" />
+            <small v-if="errors.product" class="text-red-500 mt-1 flex items-center gap-1 text-xs">
+              <i class="pi pi-exclamation-circle"></i> {{ errors.product }}
+            </small>
+          </div>
+
+          <div class="col-span-6 md:col-span-3">
+            <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Carro (Un. Logística)</label>
+            <InputNumber v-model="logisticUnit" :useGrouping="false" fluid class="w-full" placeholder="Ex: 123" />
+            <small v-if="errors.logisticUnit" class="text-red-500 mt-1 text-xs">{{ errors.logisticUnit }}</small>
+          </div>
+
+          <div class="col-span-6 md:col-span-3">
+            <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Quantidade</label>
+            <InputNumber v-model="quantity" :useGrouping="false" fluid class="w-full" placeholder="Ex: 360"
+              suffix=" un." />
+            <small v-if="errors.quantity" class="text-red-500 mt-1 text-xs">{{ errors.quantity }}</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div
+          class="bg-white dark:bg-surface-900 p-4 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+          <div class="flex items-center gap-2 mb-3 text-surface-500 font-bold uppercase text-xs tracking-wider">
+            <i class="pi pi-clock"></i> Tempos
+          </div>
+          <div class="flex flex-col gap-4">
+            <div>
+              <label class="block text-xs font-medium text-surface-500 mb-1">Início</label>
+              <DatePicker v-model="startTime" showIcon showTime fluid class="w-full" />
+              <small v-if="errors.startTime" class="text-red-500 mt-1 text-xs">{{ errors.startTime }}</small>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-surface-500 mb-1">Fim</label>
+              <DatePicker v-model="endTime" showIcon showTime fluid class="w-full" />
+              <small v-if="errors.endTime" class="text-red-500 mt-1 text-xs">{{ errors.endTime }}</small>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-white dark:bg-surface-900 p-4 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+          <div class="flex items-center gap-2 mb-3 text-surface-500 font-bold uppercase text-xs tracking-wider">
+            <i class="pi pi-users"></i> Equipa & Turno
+          </div>
+          <div class="flex flex-col gap-4">
+            <div>
+              <TeamsSelect v-model="team" :filterSection="filterSectionVar" class="w-full" />
+              <small v-if="errors.team" class="text-red-500 mt-1 text-xs">{{ errors.team }}</small>
+            </div>
+            <div>
+              <ShiftsSelect v-model="shift" class="w-full" />
+              <small v-if="errors.shift" class="text-red-500 mt-1 text-xs">{{ errors.shift }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <div
+          class="border border-surface-200 dark:border-surface-700 rounded-xl p-4 bg-surface-50 dark:bg-surface-800/50">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-bold text-surface-700 dark:text-surface-200 text-sm flex items-center gap-2">
+              <i class="pi pi-box"></i> Matérias Primas
+            </span>
+            <span class="text-xs text-red-500" v-if="errors.rawMaterials">* Obrigatório</span>
+          </div>
+          <RawMaterialsForm v-model="rawMaterials" :phaseId="CURRENT_PHASE_ID" />
+          <small v-if="errors.rawMaterials" class="text-red-500 mt-2 block text-xs">{{ errors.rawMaterials }}</small>
+        </div>
+
+        <div
+          class="border border-surface-200 dark:border-surface-700 rounded-xl p-4 bg-surface-50 dark:bg-surface-800/50">
+          <div class="flex items-center mb-2">
+            <span class="font-bold text-surface-700 dark:text-surface-200 text-sm flex items-center gap-2">
+              <i class="pi pi-sliders-h"></i> Parâmetros
+            </span>
+          </div>
+          <ParametersForm v-model="parameters" :phaseId="CURRENT_PHASE_ID" />
+          <small v-if="errors.parameters" class="text-red-500 mt-2 block text-xs">{{ errors.parameters }}</small>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Observações / Comentários</label>
+        <Textarea v-model="comments" rows="3" class="w-full" placeholder="Informação adicional relevante..." />
+      </div>
+
+      <Divider />
+
+      <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pb-2">
+        <Button label="Cancelar" icon="pi pi-times" severity="secondary" text @click="$emit('cancel')"
+          class="w-full sm:w-auto" />
+
+        <Button type="submit" label="Guardar Registo" icon="pi pi-check" :loading="isSubmitting"
+          class="w-full sm:w-auto px-6 font-bold" />
+      </div>
+
+    </form>
   </div>
 </template>

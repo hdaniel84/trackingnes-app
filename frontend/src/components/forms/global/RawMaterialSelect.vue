@@ -1,70 +1,68 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useRawMaterialStore } from '@/stores/rawMaterialStore';
 import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
 import Select from 'primevue/select';
 
 const props = defineProps({
-  modelValue: {type: Object,default: null},
-  filterSection: { type: String, default: null }
+  modelValue: { type: [Number, String, null], default: null },
+  phaseId: { type: Number, default: null }
 });
 
 const emit = defineEmits(['update:modelValue']);
+const store = useRawMaterialStore();
 
-const rawMaterialsStore = useRawMaterialStore();
-const selectedRawMaterial = ref(null);
+// 🔹 Lógica de Filtrado por Fase
+const filteredItems = computed(() => {
+  const items = store.items;
+  if (!props.phaseId) return items;
+  return items.filter(item => item.phase?.id === props.phaseId);
+});
 
-watch(() => props.modelValue, (newVal) => {
-  if (newVal && rawMaterialsStore.items.length > 0) {
-    const found = rawMaterialsStore.items.find(rm => rm.id === newVal.id);
-    selectedRawMaterial.value = found || newVal;
-  } else {
-    selectedRawMaterial.value = null;
+const selectedValue = computed({
+  get: () => {
+    return store.items.find(item => item.id === props.modelValue) || null;
+  },
+  set: (val) => {
+    emit('update:modelValue', val ? val.id : null);
   }
-}, { immediate: true });
-
-watch(selectedRawMaterial, (newVal) => {
-  emit('update:modelValue', newVal);
 });
 
 onMounted(async () => {
-  if (rawMaterialsStore.items.length === 0) {
-    await rawMaterialsStore.fetchAll();
-    if (props.modelValue) {
-      const found = rawMaterialsStore.items.find(rm => rm.id === props.modelValue.id);
-      selectedRawMaterial.value = found || props.modelValue;
-    }
-  }
-});
-
-// Filtro
-const filteredItems = computed(() => {
-  const items = rawMaterialsStore.items;
-  const filter = props.filterSection;
-  if (!filter || items.length === 0) return items;
-  return items.filter(eq =>
-    eq.sectionDescription &&
-    eq.sectionDescription.toLowerCase().includes(filter.toLowerCase())
-  );
+  await store.fetchAll();
 });
 </script>
 
 <template>
-  <div>
-    <div v-if="rawMaterialsStore.loading">
-      <ProgressSpinner style="width: 50px; height: 50px" strokeWidth="8" animationDuration=".5s" />
-      <p>Carregando...</p>
+  <div class="w-full">
+    <div v-if="store.loading" class="flex items-center justify-center py-2">
+      <ProgressSpinner style="width: 25px; height: 25px" strokeWidth="6" />
     </div>
 
-    <div v-else-if="rawMaterialsStore.error">
-      <Message severity="error">{{ rawMaterialsStore.error }}</Message>
+    <div v-else-if="store.error">
+      <Message severity="error" :closable="false" size="small">{{ store.error }}</Message>
     </div>
 
-    <div v-else class="p-field">
-      <span class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">Matéria prima</span>
-      <Select inputId="rawMaterialSelect" id="rawMaterial" class="mt-2" v-model="selectedRawMaterial"
-        :options="filteredItems" optionLabel="description" placeholder="Selecciona" filter />
+    <div v-else>
+      <Select v-model="selectedValue" :options="filteredItems" optionLabel="description"
+        placeholder="Selecione Matéria Prima" filter :filterFields="['sapCode', 'description']" showClear fluid
+        class="w-full">
+        <template #option="slotProps">
+          <div class="flex flex-col">
+            <span class="font-bold text-sm">{{ slotProps.option.sapCode }}</span>
+            <span class="text-xs text-surface-600">{{ slotProps.option.description }}</span>
+          </div>
+        </template>
+
+        <template #value="slotProps">
+          <div v-if="slotProps.value" class="flex gap-2 text-sm">
+            <span class="font-bold">{{ slotProps.value.sapCode }}</span>
+            <span>- {{ slotProps.value.description }}</span>
+          </div>
+          <span v-else>{{ slotProps.placeholder }}</span>
+        </template>
+      </Select>
     </div>
   </div>
 </template>

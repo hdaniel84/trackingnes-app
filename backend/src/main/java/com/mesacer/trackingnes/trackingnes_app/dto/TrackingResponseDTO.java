@@ -20,6 +20,11 @@ public class TrackingResponseDTO {
     private Integer quantity;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+
+    private Long trackingSourceId;
+    // Opcional: Info extra para mostrar en el frontend sin hacer otra petición
+    // Ej: "Producto X (Fase Anterior)"
+    private String trackingSourceProductDescription;
     
     // Audit fields (Solo lectura)
     private LocalDateTime createdDate;
@@ -29,4 +34,6 @@ public class TrackingResponseDTO {
     private String comments;
 
     private List<TrackingParameterResponseDTO> parameters;
+
+    private List<TrackingRawMaterialResponseDTO> rawMaterials;
 }

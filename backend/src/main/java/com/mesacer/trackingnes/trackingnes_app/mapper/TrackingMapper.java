@@ -5,18 +5,17 @@ import com.mesacer.trackingnes.trackingnes_app.dto.TrackingResponseDTO;
 import com.mesacer.trackingnes.trackingnes_app.model.*; // Importar todas las entidades
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", uses = { TrackingParameterMapper.class })
+@Mapper(componentModel = "spring", uses = { TrackingParameterMapper.class, TrackingRawMaterialMapper.class })
 public interface TrackingMapper {
 
     // --- MAPPING DE ENTRADA (Request -> Entity) ---
-
-    // CORRECCIÓN: Quitamos ".id" del target.
     // Mapeamos directamente a la entidad (usando los helpers de abajo)
     @Mapping(target = "team", source = "teamId")
     @Mapping(target = "shift", source = "shiftId")
     @Mapping(target = "product", source = "productId")
     @Mapping(target = "equipment", source = "equipmentId")
     @Mapping(target = "phase", source = "phaseId")
+    @Mapping(target = "trackingSource", source = "trackingSourceId")
 
     @Mapping(target = "createdDate", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -28,12 +27,12 @@ public interface TrackingMapper {
 
     @InheritConfiguration
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "parameters", ignore = true) // Los parámetros los manejamos manualmente en el servicio o por
-                                                   // cascade
     void updateEntityFromDto(TrackingRequestDTO dto, @MappingTarget Tracking entity);
 
     // --- MAPPING DE SALIDA ---
-
+    // Extraemos el ID del objeto padre
+    @Mapping(target = "trackingSourceId", source = "trackingSource.id")
+    @Mapping(target = "trackingSourceProductDescription", source = "trackingSource.product.description")
     @Mapping(target = "createdByUsername", ignore = true)
     TrackingResponseDTO toResponseDTO(Tracking entity);
 
@@ -80,6 +79,14 @@ public interface TrackingMapper {
         Phase p = new Phase();
         p.setId(id);
         return p;
+    }
+
+    default Tracking mapTrackingRef(Long id) {
+        if (id == null)
+            return null;
+        Tracking t = new Tracking();
+        t.setId(id);
+        return t;
     }
 
 }

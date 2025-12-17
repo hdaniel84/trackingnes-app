@@ -42,6 +42,7 @@ public class TrackingRequestDTO {
 
     private Long rawMaterialId;
 
+    // Solo necesitamos el ID del registro origen
     private Long trackingSourceId;
 
     @Size(max = 5000, message = "Los comentarios no pueden superar 5000 caracteres")
@@ -49,4 +50,7 @@ public class TrackingRequestDTO {
 
     @Valid
     private List<TrackingParameterRequestDTO> parameters;
+
+    @Valid
+    private List<TrackingRawMaterialRequestDTO> rawMaterials;
 }

@@ -7,7 +7,7 @@ import org.mapstruct.factory.Mappers;
 import com.mesacer.trackingnes.trackingnes_app.dto.RawMaterialDTO;
 import com.mesacer.trackingnes.trackingnes_app.model.RawMaterial;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = { PhaseMapper.class })
 public interface RawMaterialMapper {
 
     RawMaterialMapper INSTANCE = Mappers.getMapper(RawMaterialMapper.class);

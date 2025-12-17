@@ -8,4 +8,7 @@ public class RawMaterialDTO {
     private String sapCode;
     private String description;
     private String sectionDescription;
+    
+    private PhaseDTO phase;
+    private Boolean mandatory;
 }
