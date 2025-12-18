@@ -2,6 +2,7 @@ package com.mesacer.trackingnes.trackingnes_app.controller;
 
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingRequestDTO;
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingResponseDTO;
+import com.mesacer.trackingnes.trackingnes_app.dto.TrackingSelectDTO;
 import com.mesacer.trackingnes.trackingnes_app.service.TrackingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class TrackingController {
 
     @GetMapping
     public ResponseEntity<List<TrackingResponseDTO>> getAll(
-            @RequestParam(required = false) Long phaseId, 
+            @RequestParam(required = false) Long phaseId,
             @PageableDefault(size = 20, sort = "startTime", direction = Sort.Direction.DESC) Pageable pageable) {
         // Pasamos el phaseId al servicio
         Page<TrackingResponseDTO> page = service.getAll(phaseId, pageable);
@@ -42,6 +43,11 @@ public class TrackingController {
         // Ya no comprobamos null aquí, porque el servicio lanza EntityNotFoundException
         // lo cual es manejado globalmente (ver abajo) o devuelve el objeto si existe.
         return ResponseEntity.ok(service.findById(id));
+    }
+
+    @GetMapping("/candidates/{phaseId}")
+    public ResponseEntity<List<TrackingSelectDTO>> getCandidates(@PathVariable Long phaseId) {
+        return ResponseEntity.ok(service.findCandidatesByPhase(phaseId));
     }
 
     @PostMapping

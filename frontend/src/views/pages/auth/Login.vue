@@ -1,34 +1,37 @@
 <script setup>
 import FloatingConfigurator from '@/components/FloatingConfigurator.vue';
-import { reactive, ref } from 'vue';
+import { reactive, ref, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useToast } from 'primevue/usetoast';
 
-// --- Imports de Componentes ---
+// --- PrimeVue Imports ---
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import Checkbox from 'primevue/checkbox';
 import Button from 'primevue/button';
 import Message from 'primevue/message';
+import FloatLabel from 'primevue/floatlabel';
+import IconField from 'primevue/iconfield';
+import InputIcon from 'primevue/inputicon';
+
+// --- Assets ---
 import myLogo from '@/assets/images/logo_webapps.png';
 import mesaLogo from '@/assets/images/logo_mesa_white.svg';
-// ---------------------------------------------------------------------
 
 const authStore = useAuthStore();
 const toast = useToast();
 
-// 1. Estado para as credenciales
-const credentials = reactive({
-    username: '',
-    password: '',
-});
-
-// 2. Estado de la UI
+const credentials = reactive({ username: '', password: '' });
 const loginError = ref('');
 const isLoading = ref(false);
 const checked = ref(false);
+const showContent = ref(false); // Para animación de entrada
 
-// 3. Función de Login
+onMounted(() => {
+    // Pequeño delay para animar la entrada del formulario
+    setTimeout(() => { showContent.value = true; }, 100);
+});
+
 const handleLogin = async () => {
     loginError.value = '';
     isLoading.value = true;
@@ -36,16 +39,22 @@ const handleLogin = async () => {
     try {
         await authStore.login(credentials);
     } catch (error) {
-        const errorMessage = error.message || 'Erro desconhecido ao iniciar sessão. Verifique o backend.';
+        const errorMessage = error.message || 'Erro de conexão.';
         loginError.value = errorMessage;
+
+        // Animación de "sacudida" en el formulario si falla (opcional visual)
+        const form = document.getElementById('login-form-card');
+        if (form) {
+            form.classList.add('shake');
+            setTimeout(() => form.classList.remove('shake'), 500);
+        }
 
         toast.add({
             severity: 'error',
-            summary: 'Erro de Acesso',
+            summary: 'Acesso Negado',
             detail: errorMessage,
-            life: 5000
+            life: 4000
         });
-
     } finally {
         isLoading.value = false;
     }
@@ -53,99 +62,127 @@ const handleLogin = async () => {
 </script>
 
 <template>
-    <div class="min-h-screen flex items-center justify-center overflow-hidden bg-surface-50 dark:bg-surface-950">
-        <FloatingConfigurator />
+    <div class="min-h-screen flex w-full overflow-hidden bg-surface-50 dark:bg-surface-950 font-sans">
+        <div class="fixed top-4 right-4 z-50">
+            <FloatingConfigurator />
+        </div>
 
-        <div class="w-full h-screen grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12">
+        <div
+            class="hidden lg:flex lg:w-[45%] relative flex-col justify-between p-12 text-white overflow-hidden bg-primary-900">
 
-            <div
-                class="hidden md:flex lg:col-span-5 flex-col justify-between p-10 relative overflow-hidden bg-blue-900">
-                <div class="absolute inset-0 bg-gradient-to-br from-blue-600 to-black opacity-90 z-0"></div>
-
-                <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-blue-600 opacity-10 blur-3xl z-0"></div>
-                <div class="absolute bottom-10 right-10 w-80 h-80 rounded-full bg-blue-700 opacity-10 blur-3xl z-0">
+            <div class="absolute inset-0 z-0">
+                <div class="absolute inset-0 bg-gradient-to-br from-primary-800 via-primary-900 to-black opacity-90">
                 </div>
-
-                
-                <div class="relative z-10">
-                    <div class="flex items-center gap-3 font-bold text-2xl text-white mb-10">
-                        <img :src="mesaLogo" alt="Mesacer Ceramics" class="h-10 mb-3" />
-                        <i class="pi pi-chart-bar text-3xl"></i>
-                        <span>TrackingNes</span>
-                    </div>
-                </div>
-                
-
-                <div class="relative z-10 text-white mb-10">
-                    <p class="text-4xl font-bold mb-4 leading-tight">Gestão de Rastreio de Produção</p>
-                    <p class="text-surface-300 text-lg">Aceda ao painel de controlo para acompanhar e gerir cada fase do processo produtivo.</p>
-                </div>
-
-                <div class="relative z-10 text-surface-500 text-sm">
-                    &copy; {{ new Date().getFullYear() }} Mesacer Webapps
+                <div class="animated-blob blob-1"></div>
+                <div class="animated-blob blob-2"></div>
+                <div
+                    class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay">
                 </div>
             </div>
 
+            <div class="relative z-10 h-full flex flex-col justify-between">
+                <div class="flex items-center gap-3 animate-fade-in-down">
+                    <img :src="mesaLogo" alt="Mesacer Ceramics" class="h-8" />
+                    <div class="h-6 w-px bg-white/30"></div>
+                    <span class="font-mono text-sm tracking-widest uppercase opacity-80">Tracking System</span>
+                </div>
+
+                <div class="max-w-md animate-fade-in-up">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center mb-6 border border-white/20 shadow-lg">
+                        <i class="pi pi-chart-bar text-3xl text-white"></i>
+                    </div>
+                    <h1 class="text-5xl font-bold mb-6 leading-tight tracking-tight">
+                        Controlo total da <span class="text-primary-300">produção.</span>
+                    </h1>
+                    <p class="text-lg text-primary-100/80 leading-relaxed font-light">
+                        Monitorização em tempo real, rastreabilidade lote a lote e gestão de eficiência OEE numa única
+                        plataforma.
+                    </p>
+                </div>
+
+                <div class="text-xs text-primary-200/50 uppercase tracking-widest font-semibold">
+                    &copy; {{ new Date().getFullYear() }} Mesacer TrackingNes v2.0
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 flex items-center justify-center p-6 relative">
             <div
-                class="col-span-1 lg:col-span-7 flex items-center justify-center p-6 md:p-12 bg-surface-100 dark:bg-surface-900">
+                class="absolute inset-0 lg:hidden bg-gradient-to-b from-primary-900/10 to-transparent pointer-events-none">
+            </div>
 
+            <div id="login-form-card" class="w-full max-w-[420px] transition-all duration-700 ease-out transform"
+                :class="showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'">
                 <div
-                    class="w-full max-w-md bg-surface-0 dark:bg-surface-800 p-8 rounded-2xl shadow-2xl border border-surface-200 dark:border-surface-700">
+                    class="bg-surface-0 dark:bg-surface-900 p-8 md:p-10 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-surface-100 dark:border-surface-800">
 
-                    <div class="text-center mb-8">
-                        <img :src="myLogo" alt="Webapps" class="h-14 mb-4 mx-auto" />
-                        <h2 class="text-surface-900 dark:text-surface-0 text-2xl font-bold mb-2">Bem-vindo</h2>
-                        <p class="text-muted-color text-sm">Por favor, introduza os seus dados para continuar.</p>
+                    <div class="text-center mb-10">
+                        <img :src="myLogo" alt="Webapps"
+                            class="h-12 mx-auto mb-6 hover:scale-105 transition-transform duration-300" />
+                        <h2 class="text-2xl font-bold text-surface-900 dark:text-surface-0">Bem-vindo de volta</h2>
+                        <p class="text-surface-500 dark:text-surface-400 text-sm mt-2">Insira as suas credenciais para
+                            aceder</p>
                     </div>
 
-                    <form @submit.prevent="handleLogin">
-                        <Message v-if="loginError" severity="error" :closable="false" class="mb-6 shadow-sm">
-                            {{ loginError }}
-                        </Message>
+                    <form @submit.prevent="handleLogin" class="flex flex-col gap-6">
 
-                        <div class="flex flex-col gap-5">
-                            <div class="flex flex-col gap-2">
-                                <label for="username1"
-                                    class="text-surface-700 dark:text-surface-300 font-semibold text-sm">Utilizador</label>
-                                <span class="p-input-icon-left">
-                                    <InputText id="username1" type="text" placeholder="ex. nome.utilizador"
-                                        class="w-full p-3" v-model="credentials.username" :disabled="isLoading"
-                                        required />
-                                </span>
-                            </div>
+                        <transition name="p-message" tag="div">
+                            <Message v-if="loginError" severity="error" :closable="false" class="mb-2">
+                                {{ loginError }}
+                            </Message>
+                        </transition>
 
-                            <div class="flex flex-col gap-2">
-                                <div class="flex justify-between items-center">
-                                    <label for="password1"
-                                        class="text-surface-700 dark:text-surface-300 font-semibold text-sm">Palavra-passe</label>
-                                    <a
-                                        class="text-primary-600 hover:text-primary-700 font-semibold text-sm cursor-pointer no-underline transition-colors duration-200">
-                                        Esqueceu-se da palavra-passe?
-                                    </a>
-                                </div>
-                                <Password id="password1" v-model="credentials.password" placeholder="••••••••"
-                                    :toggleMask="true" class="w-full" inputClass="w-full p-3" :feedback="false"
-                                    :disabled="isLoading" required>
-                                </Password>
-                            </div>
-
-                            <div class="flex items-center mt-2">
-                                <Checkbox v-model="checked" id="rememberme1" binary class="mr-2"></Checkbox>
-                                <label for="rememberme1"
-                                    class="text-surface-600 dark:text-surface-400 cursor-pointer text-sm">Manter sessão
-                                    iniciada</label>
-                            </div>
-
-                            <Button type="submit" label="Iniciar Sessão"
-                                class="w-full p-3 font-bold mt-2 shadow-md transition-transform active:scale-95"
-                                :loading="isLoading" :disabled="isLoading" />
+                        <div class="field">
+                            <FloatLabel>
+                                <IconField>
+                                    <InputIcon class="pi pi-user z-10" />
+                                    <InputText id="username" v-model="credentials.username" class="w-full pl-10"
+                                        :disabled="isLoading" />
+                                </IconField>
+                                <label for="username" class="ml-8">Nome de Utilizador</label>
+                            </FloatLabel>
                         </div>
-                    </form>
 
-                    <div class="mt-8 text-center text-surface-500 text-sm">
-                        Não tem uma conta? <span class="text-primary font-bold cursor-pointer hover:underline">Contacte
-                            o suporte</span>
-                    </div>
+                        <div class="field">
+                            <FloatLabel>
+                                <IconField>
+                                    <InputIcon class="pi pi-lock z-10" />
+                                    <Password id="password" v-model="credentials.password" :feedback="false" toggleMask
+                                        class="w-full" inputClass="w-full pl-10" :disabled="isLoading" />
+                                </IconField>
+                                <label for="password" class="ml-8">Palavra-passe</label>
+                            </FloatLabel>
+                            <div class="flex justify-end mt-2">
+                                <a href="#"
+                                    class="text-xs font-semibold text-primary-600 hover:text-primary-700 no-underline hover:underline transition-all">
+                                    Recuperar palavra-passe?
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-2">
+                            <div class="flex items-center gap-2">
+                                <Checkbox v-model="checked" id="remember" binary />
+                                <label for="remember"
+                                    class="text-sm text-surface-600 dark:text-surface-300 cursor-pointer select-none">
+                                    Lembrar-me
+                                </label>
+                            </div>
+                        </div>
+
+                        <Button type="submit" :loading="isLoading"
+                            class="w-full py-3.5 font-bold text-base rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all duration-300 transform active:scale-[0.98]">
+                            <span v-if="!isLoading">Iniciar Sessão</span>
+                            <span v-else>A Autenticar...</span>
+                        </Button>
+                    </form>
+                </div>
+
+                <div class="text-center mt-8 text-xs text-surface-400 dark:text-surface-500">
+                    Precisa de acesso? <span
+                        class="font-bold text-surface-900 dark:text-surface-200 cursor-pointer hover:underline">Contacte
+                        o Administrador</span>
                 </div>
             </div>
         </div>
@@ -153,18 +190,146 @@ const handleLogin = async () => {
 </template>
 
 <style scoped>
-/* Ajustes para o componente Password preencher a largura */
-:deep(.p-password) {
-    width: 100%;
+/* 1. Animated Blobs for Background */
+.animated-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.6;
+    animation: float 10s infinite ease-in-out;
+}
+
+.blob-1 {
+    top: -10%;
+    left: -10%;
+    width: 500px;
+    height: 500px;
+    background: #3B82F6;
+    /* Primary Blue */
+    animation-delay: 0s;
+}
+
+.blob-2 {
+    bottom: -10%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: #6366f1;
+    /* Indigo */
+    animation-delay: -5s;
+}
+
+@keyframes float {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+        transform: translate(30px, -50px) scale(1.1);
+    }
+
+    66% {
+        transform: translate(-20px, 20px) scale(0.9);
+    }
+
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+}
+
+/* 2. Shake Animation on Error */
+.shake {
+    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+@keyframes shake {
+
+    10%,
+    90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+        transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+        transform: translate3d(4px, 0, 0);
+    }
+}
+
+/* 3. Text Animations */
+.animate-fade-in-down {
+    animation: fadeInDown 0.8s ease-out forwards;
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out 0.2s forwards;
+    /* delay */
+    opacity: 0;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 4. PrimeVue Overrides for "Pro" look */
+:deep(.p-inputtext) {
+    border-radius: 0.75rem;
+    /* Rounded-xl */
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    background: var(--surface-50);
+    border: 1px solid var(--surface-200);
+    transition: all 0.2s;
+}
+
+:deep(.dark) :deep(.p-inputtext) {
+    background: var(--surface-800);
+    border-color: var(--surface-700);
+}
+
+:deep(.p-inputtext:enabled:focus) {
+    background: var(--surface-0);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.1);
+    /* Suave glow */
 }
 
 :deep(.p-password-input) {
     width: 100%;
 }
 
-/* Foco suave */
-:deep(.p-inputtext:focus) {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+:deep(.p-float-label label) {
+    margin-top: -0.5rem;
+    /* Ajuste fino para centrar label */
 }
 </style>

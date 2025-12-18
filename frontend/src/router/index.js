@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '@/stores/auth'; // Importamos el store
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,47 +14,101 @@ const router = createRouter({
             path: '/prensas',
             name: 'prensas',
             component: () => import('@/views/pages/tracking/prensas/PrensasMain.vue'),
-            meta: { requiresAuth: true }
+            meta: {
+                requiresAuth: true,
+                requiredPrivilege: 'WRITE_PRENSAS'
+            }
         },
-        /*
-        {
-            path: '/prensas',
-            name: 'prensas',
-            component: () => import('@/views/pages/prensas/PrensasMain.vue'),
-            meta: { requiresAuth: true } 
-        },*/
         {
             path: '/vidragem',
             name: 'vidragem',
-            component: () => import('@/views/pages/vidragem/VidragemMain.vue'),
-            meta: { requiresAuth: true }
+            component: () => import('@/views/pages//tracking/vidragem/VidragemMain.vue'),
+            meta: {
+                requiresAuth: true,
+                requiredPrivilege: 'WRITE_VIDRAGEM'
+            }
         },
+
+
+        // ... otras rutas protegidas ...
+
+        // 🛡️ VISTA DE ACCESO DENEGADO (Necesaria para la redirección)
         {
-            path: '/forno-entrada',
-            name: 'forno-entrada',
-            component: () => import('@/views/pages/fornoEntrada/FornoEntradaMain.vue'),
+            path: '/access-denied',
+            name: 'access-denied',
+            component: () => import('@/views/pages/auth/Access.vue'), // Asegúrate de crear este archivo
             meta: { requiresAuth: true }
         },
-        // ... (el resto de rutas deben seguir este patrón)
 
         // ------------------------------------------------------------------------
-        // 🛡️ RUTAS PÚBLICAS (No necesitan el AppLayout)
+        // 🔓 RUTAS PÚBLICAS
         // ------------------------------------------------------------------------
-
         {
             path: '/auth/login',
             name: 'login',
             component: () => import('@/views/pages/auth/Login.vue'),
-            meta: { requiresAuth: false } // Pública
+            meta: { requiresAuth: false }
         },
-        // ... (otras rutas públicas como landing, notfound) ...
-
         {
-            path: '/:catchAll(.*)', // Ruta comodín para 404
+            path: '/:catchAll(.*)',
             name: 'notfound',
             component: () => import('@/views/pages/NotFound.vue')
         }
     ]
+});
+
+// =============================================================================
+// 🔒 GLOBAL NAVIGATION GUARD
+// Aquí es donde ocurre la magia de la seguridad
+// =============================================================================
+router.beforeEach((to, from, next) => {
+    // 1. Instanciar el store DENTRO del guard para evitar errores de inicialización de Pinia
+    const authStore = useAuthStore();
+
+    // 2. Manejo de recarga de página (F5)
+    // Si hay token en storage pero el store está vacío, intentamos restaurar la sesión
+    if (!authStore.isLoggedIn && localStorage.getItem('jwtToken')) {
+        authStore.initializeStore();
+    }
+
+    // 3. Lógica de Rutas Públicas (Login, 404, etc)
+    // Si la ruta NO requiere auth (requiresAuth: false), dejamos pasar
+    if (to.meta.requiresAuth === false) {
+        // UX: Si ya está logueado e intenta ir al Login, lo mandamos al Dashboard
+        if (to.name === 'login' && authStore.isLoggedIn) {
+            return next({ name: 'dashboard' });
+        }
+        return next();
+    }
+
+    // 4. Verificar Autenticación Básica
+    // Si la ruta requiere auth y NO estamos logueados -> Login
+    if (!authStore.isLoggedIn) {
+        // Guardamos la ruta a la que quería ir (redirect) para devolverlo allí tras el login
+        return next({
+            name: 'login',
+            query: { redirect: to.fullPath }
+        });
+    }
+
+    // 5. Verificar PRIVILEGIOS (Granularidad Fina)
+    if (to.meta.requiredPrivilege) {
+        if (!authStore.hasPrivilege(to.meta.requiredPrivilege)) {
+            console.warn(`Acceso denegado: Usuario ${authStore.user?.username} no tiene el privilegio ${to.meta.requiredPrivilege}`);
+            return next({ name: 'access-denied' });
+        }
+    }
+
+    // 6. Verificar ROLES (Granularidad Gruesa)
+    if (to.meta.requiredRole) {
+        if (!authStore.hasRole(to.meta.requiredRole)) {
+            console.warn(`Acceso denegado: Falta el rol ${to.meta.requiredRole}`);
+            return next({ name: 'access-denied' });
+        }
+    }
+
+    // Si pasa todas las validaciones, permitimos la navegación
+    next();
 });
 
 export default router;

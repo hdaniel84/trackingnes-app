@@ -7,17 +7,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RestController
-@RequestMapping("/api/auth") // Ruta permitida por WebSecurityConfig
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
 
-    // Spring inyecta las dependencias necesarias
     public AuthController(AuthenticationManager authenticationManager, TokenService tokenService) {
         this.authenticationManager = authenticationManager;
         this.tokenService = tokenService;
@@ -25,8 +29,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
-        
-        // 1. Intentar Autenticar al usuario
+
+        // 1. Autenticar
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsername(),
@@ -34,16 +38,43 @@ public class AuthController {
                 )
         );
 
-        // 2. Si la autenticación es exitosa, guardar en el contexto de seguridad
+        // 2. Establecer contexto
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // 3. Generar el Token JWT
+        // 3. Generar Token
         String jwt = tokenService.generateToken(authentication);
 
-        // 4. Devolver el token al frontend
-        return ResponseEntity.ok(new JwtResponse(jwt));
+        // 4. Obtener detalles del usuario (UserDetails)
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+        // 5. Extraer Roles y Privilegios
+        // En Spring Security, todo son "Authorities". 
+        // Convención: Los ROLES suelen empezar con "ROLE_", el resto son privilegios.
+        
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(auth -> auth.startsWith("ROLE_")) // Filtramos Roles
+                .collect(Collectors.toList());
+
+        List<String> privileges = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(auth -> !auth.startsWith("ROLE_")) // El resto son Privilegios
+                .collect(Collectors.toList());
+
+        // 6. Devolver respuesta completa
+        return ResponseEntity.ok(new JwtResponse(
+                jwt, 
+                userDetails.getUsername(), 
+                roles, 
+                privileges
+        ));
     }
-    
-    // Clase simple para encapsular la respuesta del JWT
-    private record JwtResponse(String token) {}
+
+    // Actualizamos el Record para incluir lo que pide Pinia Store
+    public record JwtResponse(
+            String token, 
+            String username, 
+            List<String> roles, 
+            List<String> privileges
+    ) {}
 }

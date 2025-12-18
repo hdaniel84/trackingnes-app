@@ -7,7 +7,7 @@ import TabPanels from 'primevue/tabpanels';
 import TabPanel from 'primevue/tabpanel';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
-import TrackingPrensasForm from '@/components/forms/tracking/prensas/PrensasForm.vue';
+import TrackingVidragemForm from '@/components/forms/tracking/vidragem/VidragemForm.vue';
 
 // Paleta de colores
 const colorPalette = [
@@ -66,9 +66,9 @@ const saveTitle = (press) => {
                 <div class="flex items-center border-b border-surface-200 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-800/30 pl-4 pr-2 pt-1">
                     
                     <div class="flex items-center gap-2 mr-4 pb-1">
-                        <i class="pi pi-th-large text-primary-500"></i>
+                        <i class="pi pi-slack text-primary-500"></i>
                         <span class="font-bold text-sm text-surface-700 dark:text-surface-200 uppercase tracking-wide whitespace-nowrap">
-                            Produção Prensas
+                            Produção Vidragem
                         </span>
                         <div class="h-4 w-px bg-surface-300 dark:bg-surface-600 mx-2"></div>
                     </div>
@@ -135,7 +135,7 @@ const saveTitle = (press) => {
 
                             <div class="p-6 bg-surface-50/30 dark:bg-surface-950/30 flex-1 overflow-y-auto">
                                 <div class="max-w-7xl mx-auto">
-                                    <TrackingPrensasForm :key="press.id" mode="create" class="animate-fade-in" />
+                                    <TrackingVidragemForm :key="press.id" mode="create" class="animate-fade-in" />
                                 </div>
                             </div>
                         </div>

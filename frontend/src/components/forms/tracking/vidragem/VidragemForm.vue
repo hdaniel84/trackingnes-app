@@ -2,7 +2,7 @@
 import { useTrackingStore } from '@/stores/trackingStore';
 import { useForm, useField } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
-import { trackingSchema } from '@/validation/trackingSchema';
+import { trackingVidragemFormSchema } from '@/validation/trackingVidragemFormSchema';
 import { onMounted, defineProps, watch, ref } from 'vue';
 
 // Helpers & UI
@@ -22,6 +22,7 @@ import EquipmentsSelect from '@/components/forms/global/EquipmentsSelect.vue';
 import ParametersForm from '@/components/forms/global/ParametersForm.vue';
 import RawMaterialsForm from '@/components/forms/global/RawMaterialsForm.vue';
 import AuxiliaryEquipmentsSelect from '@/components/forms/global/AuxiliaryEquipmentsSelect.vue';
+import TrackingSourceSelect from '@/components/forms/global/TrackingSourceSelect.vue';
 
 const props = defineProps({
   item: Object,
@@ -29,16 +30,17 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['success', 'cancel']);
-const CURRENT_PHASE_ID = 1; // 1 = Prensas
+const CURRENT_PHASE_ID = 2; // 2 = Vidragem
+const SOURCE_PHASE_ID = 1; // Fase de donde debería mostrarse los items de la fase anterior
 
 const store = useTrackingStore();
-const filterSectionVar = ref('prensas');
+const filterSectionVar = ref('Vidragem');
 const { notifySuccess, notifyError } = useNotify();
 const { showErrorDialog } = useErrorDialog();
 
 // Vee-Validate
 const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta } = useForm({
-  validationSchema: toTypedSchema(trackingSchema),
+  validationSchema: toTypedSchema(trackingVidragemFormSchema),
   validateOnMount: false,
   initialValues: {
     startTime: new Date(),
@@ -49,6 +51,7 @@ const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta } = useFo
 });
 
 // Campos
+const { value: trackingSourceId } = useField('trackingSourceId');
 const { value: logisticUnit } = useField('logisticUnit');
 const { value: startTime } = useField('startTime');
 const { value: endTime } = useField('endTime');
@@ -67,6 +70,7 @@ const { value: auxiliaryEquipmentIds } = useField('auxiliaryEquipmentIds');
 watch(() => props.item, (val) => {
   if (val) {
     setValues({
+      trackingSourceId: val.trackingSourceId,
       logisticUnit: val.logisticUnit,
       startTime: new Date(val.startTime),
       endTime: val.endTime ? new Date(val.endTime) : null,
@@ -97,11 +101,6 @@ watch(() => props.item, (val) => {
 }, { immediate: true });
 
 onMounted(() => {
-  //if (props.mode === 'create') {
-    //startTime.value = new Date();
-    // Inicializar fila vacía obligatoria
-    //rawMaterials.value = [{ id: null, rawMaterialId: null, value: '' }];
-  //}
 });
 
 const onSubmit = handleSubmit(async (values) => {
@@ -129,6 +128,7 @@ const onSubmit = handleSubmit(async (values) => {
     });
 
     const payload = {
+      trackingSourceId: values.trackingSourceId,
       logisticUnit: values.logisticUnit,
       startTime: values.startTime,
       endTime: values.endTime,
@@ -208,6 +208,20 @@ const onSubmit = handleSubmit(async (values) => {
               <i class="pi pi-exclamation-circle"></i> {{ errors.product }}
             </small>
           </div>
+
+          <div class="col-span-12 md:col-span-6">
+            <TrackingSourceSelect v-model="trackingSourceId" :sourcePhaseId="SOURCE_PHASE_ID"
+              :filterProductId="product?.shapeId" label="Peças de Prensas (Origem)" />
+            <!--
+              <TrackingSourceSelect v-model="trackingSourceId" :sourcePhaseId="SOURCE_PHASE_ID" :filterProductId="product?.id"
+              label="Peças de Prensas (Origem)" /> ---- ASI ES COMO DEBERÁN SER LAS DEMAS FASES, BUSCAR POR EL ID DEL PROPIO PRODUCTO
+            -->
+            <small v-if="errors.trackingSourceId" class="text-red-500 mt-1 text-xs">
+              {{ errors.trackingSourceId }}
+            </small>
+          </div>
+
+
 
           <div class="col-span-6 md:col-span-3">
             <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Carro (Un. Logística)</label>
@@ -309,7 +323,7 @@ const onSubmit = handleSubmit(async (values) => {
         <Button label="Cancelar" icon="pi pi-times" severity="secondary" text @click="$emit('cancel')"
           class="w-full sm:w-auto" />
         <Button type="submit" label="Guardar Registo" icon="pi pi-check" :loading="isSubmitting"
-          class="w-full sm:w-auto px-6 font-bold" v-can="'WRITE_PRENSAS'"/>
+          class="w-full sm:w-auto px-6 font-bold" />
       </div>
 
     </form>

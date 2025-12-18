@@ -1,26 +1,19 @@
 <script setup>
-import FloatingConfigurator from '@/components/FloatingConfigurator.vue';
+import Button from 'primevue/button';
 </script>
-
 <template>
-    <FloatingConfigurator />
-    <div class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-[100vw] overflow-hidden">
-        <div class="flex flex-col items-center justify-center">
-            <div style="border-radius: 56px; padding: 0.3rem; background: linear-gradient(180deg, rgba(247, 149, 48, 0.4) 10%, rgba(247, 149, 48, 0) 30%)">
-                <div class="w-full bg-surface-0 dark:bg-surface-900 py-20 px-8 sm:px-20 flex flex-col items-center" style="border-radius: 53px">
-                    <div class="gap-4 flex flex-col items-center">
-                        <div class="flex justify-center items-center border-2 border-orange-500 rounded-full" style="width: 3.2rem; height: 3.2rem">
-                            <i class="text-orange-500 pi pi-fw pi-lock !text-2xl"></i>
-                        </div>
-                        <h1 class="text-surface-900 dark:text-surface-0 font-bold text-4xl lg:text-5xl mb-2">Access Denied</h1>
-                        <span class="text-muted-color mb-8">You do not have the necessary permisions. Please contact admins.</span>
-                        <img src="/demo/images/access/asset-access.svg" alt="Access denied" class="mb-8" width="80%" />
-                        <div class="col-span-12 mt-8 text-center">
-                            <Button as="router-link" label="Go to Dashboard" to="/" severity="warn" />
-                        </div>
-                    </div>
-                </div>
+    <div class="flex flex-col items-center justify-center min-h-screen bg-surface-50 dark:bg-surface-900 p-4">
+        <div class="text-center">
+            <div class="bg-red-100 dark:bg-red-900/20 p-4 rounded-full inline-flex mb-4">
+                <i class="pi pi-lock text-4xl text-red-500"></i>
             </div>
+            <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0 mb-2">Acesso Negado</h1>
+            <p class="text-surface-600 dark:text-surface-400 mb-6 max-w-md mx-auto">
+                Desculpe, você não tem as permissões necessárias para aceder a esta página.
+                Se acredita que isto é um erro, contacte o seu administrador.
+            </p>
+
+            <Button label="Voltar ao Dashboard" icon="pi pi-home" @click="$router.push({ name: 'dashboard' })" />
         </div>
     </div>
 </template>
