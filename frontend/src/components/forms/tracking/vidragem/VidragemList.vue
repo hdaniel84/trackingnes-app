@@ -17,7 +17,7 @@ const { formatDateTime } = useFormatters(); // Usamos el formateador
 const selectedItem = ref(null);
 const showEditDialog = ref(false);
 const showDetailDialog = ref(false);
-const CURRENT_PHASE_ID = 2; // 2 = Vidragem
+const CURRENT_PHASE_ID = 3; // = Vidragem
 
 onMounted(() => {
   store.fetchAll({ page: 0, size: 10, sort: 'id,desc', phaseId: CURRENT_PHASE_ID });

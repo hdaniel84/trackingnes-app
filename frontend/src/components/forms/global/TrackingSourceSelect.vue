@@ -20,7 +20,7 @@ const error = ref(null);
 const filteredItems = computed(() => {
     // Si no hay producto seleccionado en el padre, mostramos todo (o nada, según prefieras)
     if (!props.filterProductId) {
-        return items.value;
+        return [];
     }
     // Filtramos solo los que coincidan con el producto o con el codigoProduto (WXXX de SAP, para prensas)
     return items.value.filter(item => item.productId === props.filterProductId || item.codigoProduto === props.filterProductId);

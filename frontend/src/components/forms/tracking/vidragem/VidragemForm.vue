@@ -30,7 +30,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['success', 'cancel']);
-const CURRENT_PHASE_ID = 2; // 2 = Vidragem
+const CURRENT_PHASE_ID = 3; // 2 = Vidragem
 const SOURCE_PHASE_ID = 1; // Fase de donde debería mostrarse los items de la fase anterior
 
 const store = useTrackingStore();
