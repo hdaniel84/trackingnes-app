@@ -1,14 +1,20 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import TrackingService from '@/api/trackingApi';
 import Select from 'primevue/select';
 import Message from 'primevue/message';
 
 const props = defineProps({
-    modelValue: { type: [Number, String], default: null }, // Recibe el ID
-    sourcePhaseId: { type: Number, required: true }, // ID de la fase anterior (Ej: 1 para Prensas)
-    label: { type: String, default: 'Origem (Fase Anterior)' },
-    filterProductId: { type: String, default: null }
+    modelValue: { type: [Number, String], default: null },
+    allowedPhases: { type: Array, required: true },
+
+    targetReferenceId: { type: [String, Number], default: null },
+
+    matchReference: { type: Boolean, default: false }, // ✅ Nombre correcto
+    filterType: { type: String, default: 'PRODUCT_ID' },    // 'PRODUCT' o 'SHAPE'
+
+    label: { type: String, default: 'Origem' },
+    disabled: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -17,41 +23,39 @@ const items = ref([]);
 const loading = ref(false);
 const error = ref(null);
 
-const filteredItems = computed(() => {
-    // Si no hay producto seleccionado en el padre, mostramos todo (o nada, según prefieras)
-    if (!props.filterProductId) {
-        return [];
-    }
-    // Filtramos solo los que coincidan con el producto o con el codigoProduto (WXXX de SAP, para prensas)
-    return items.value.filter(item => item.productId === props.filterProductId || item.codigoProduto === props.filterProductId);
-});
-
-// Watch para limpiar la selección si el producto cambia y el tracking seleccionado ya no coincide
-watch(() => props.filterProductId, (newVal) => {
-    // Si hay un valor seleccionado
-    if (props.modelValue) {
-        const selectedItem = items.value.find(i => i.id === props.modelValue);
-        // Y ese item existe pero su producto NO coincide con el nuevo filtro...
-        if (selectedItem && selectedItem.productId !== newVal) {
-            emit('update:modelValue', null); // ... limpiamos el campo para evitar inconsistencias
-        }
-    }
-});
-
 const fetchCandidates = async () => {
+    // Si la regla exige coincidencia, pero no tenemos ID de referencia, no buscamos
+    if (props.matchReference && !props.targetReferenceId) {
+        items.value = [];
+        return;
+    }
+
     loading.value = true;
+    error.value = null; // Limpiar errores previos
     try {
-        const response = await TrackingService.getCandidates(props.sourcePhaseId);
+        const response = await TrackingService.getCandidates(
+            props.allowedPhases,
+            props.matchReference ? props.targetReferenceId : null,
+            props.filterType
+        );
         items.value = response.data;
     } catch (err) {
-        error.value = 'Erro ao carregar lotes anteriores';
-        console.error(err);
+        error.value = 'Erro ao carregar registos de origem.';
+        console.error("TrackingSourceSelect Error:", err);
     } finally {
         loading.value = false;
     }
 };
 
+// 1. Cargar al montar
 onMounted(() => {
+    if (!props.matchReference || props.targetReferenceId) {
+        fetchCandidates();
+    }
+});
+
+watch(() => props.targetReferenceId, (newVal, oldVal) => {
+    if (newVal !== oldVal) emit('update:modelValue', null);
     fetchCandidates();
 });
 </script>
@@ -66,10 +70,11 @@ onMounted(() => {
             <Message severity="error" :closable="false">{{ error }}</Message>
         </div>
 
-        <Select :modelValue="modelValue" @update:modelValue="(val) => emit('update:modelValue', val)"
-            :options="filteredItems" optionLabel="description" optionValue="id" :loading="loading"
-            :placeholder="props.filterProductId ? 'Selecione o lote deste produto' : 'Selecione primeiro o produto'"
-            filter showClear fluid class="w-full" :disabled="!items.length">
+        <Select :modelValue="modelValue" @update:modelValue="(val) => emit('update:modelValue', val)" :options="items"
+            optionLabel="description" optionValue="id" :loading="loading" dataKey="id"
+            :placeholder="props.matchReference && !props.targetReferenceId ? 'Selecione primeiro o produto acima' : 'Selecione o registo de origem'"
+            filter showClear fluid class="w-full"
+            :disabled="disabled || (props.matchReference && !props.targetReferenceId)">
             <template #option="slotProps">
                 <div class="flex flex-col">
                     <span class="font-bold text-sm">{{ slotProps.option.description.split(' - ')[0] }}</span>
@@ -79,7 +84,9 @@ onMounted(() => {
             </template>
 
             <template #empty>
-                <div class="p-2">Não há registos anteriores para este produto.</div>
+                <div class="p-2 text-sm">
+                    {{ props.matchReference && !props.targetReferenceId ? 'A aguardar produto...' : 'Não há registos compatíveis.' }}
+                </div>
             </template>
         </Select>
     </div>

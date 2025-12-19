@@ -7,7 +7,7 @@ import Select from 'primevue/select';
 
 const props = defineProps({
   modelValue: { type: Object, default: null },
-  filterSection: { type: String, default: null }
+  filterSection: { type: Number, default: null }
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -33,9 +33,9 @@ const selectedTeam = computed({
 const filteredTeams = computed(() => {
   const items = store.items;
   if (!props.filterSection || items.length === 0) return items;
-  
-  return items.filter(team => 
-    team.sectionDescription?.toLowerCase().includes(props.filterSection.toLowerCase())
+
+  return items.filter(team =>
+    team.sectionId == props.filterSection
   );
 });
 
@@ -61,32 +61,22 @@ onMounted(async () => {
       <label for="teamSelect" class="block text-xs font-medium text-surface-500 mb-1 ml-1">
         Equipa
       </label>
-      
-      <Select
-        id="teamSelect"
-        v-model="selectedTeam"
-        :options="filteredTeams"
-        optionLabel="description"
-        dataKey="id" 
-        placeholder="Seleciona equipa"
-        filter
-        :filterFields="['description', 'sectionDescription']"
-        showClear
-        fluid
-        class="w-full"
-      >
+
+      <Select id="teamSelect" v-model="selectedTeam" :options="filteredTeams" optionLabel="description" dataKey="id"
+        placeholder="Seleciona equipa" filter :filterFields="['description', 'sectionDescription']" showClear fluid
+        class="w-full">
         <template #option="slotProps">
           <div class="flex flex-col">
             <span class="font-bold text-sm">{{ slotProps.option.description }}</span>
             <span class="text-xs text-surface-500">{{ slotProps.option.sectionDescription }}</span>
           </div>
         </template>
-        
+
         <template #value="slotProps">
           <div v-if="slotProps.value" class="flex items-center gap-2">
             <span>{{ slotProps.value.description }}</span>
             <span class="text-surface-400 text-sm" v-if="slotProps.value.sectionDescription">
-                ({{ slotProps.value.sectionDescription }})
+              ({{ slotProps.value.sectionDescription }})
             </span>
           </div>
           <span v-else>{{ slotProps.placeholder }}</span>

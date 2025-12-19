@@ -6,7 +6,7 @@ import ProgressSpinner from 'primevue/progressspinner';
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] }, // Array de IDs
-  filterSection: { type: String, default: null }
+  filterSection: { type: Number, default: null }
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -22,40 +22,31 @@ const selectedIds = computed({
 const filteredOptions = computed(() => {
   let items = store.auxiliaryEquipments;
   if (props.filterSection) {
-    items = items.filter(e => 
-      e.sectionDescription?.toLowerCase().includes(props.filterSection.toLowerCase())
+    items = items.filter(e =>
+      e.sectionId == props.filterSection
     );
   }
   return items;
 });
 
 onMounted(() => {
-   if (store.items.length === 0) store.fetchAll();
+  if (store.items.length === 0) store.fetchAll();
 });
 </script>
 
 <template>
   <div class="w-full">
-     <div v-if="store.loading"><ProgressSpinner style="width:20px;height:20px"/></div>
-     <MultiSelect
-        v-else
-        v-model="selectedIds" 
-        :options="filteredOptions"
-        optionLabel="description"
-        optionValue="id" 
-        display="chip"
-        placeholder="Selecionar Equipamentos Auxiliares"
-        filter
-        showClear
-        fluid
-        class="w-full"
-     >
-        <template #option="slotProps">
-            <div class="flex flex-col">
-              <span class="font-bold text-sm">{{ slotProps.option.description }}</span>
-              <span class="text-xs text-surface-500">{{ slotProps.option.sapCode }}</span>
-           </div>
-        </template>
-     </MultiSelect>
+    <div v-if="store.loading">
+      <ProgressSpinner style="width:20px;height:20px" />
+    </div>
+    <MultiSelect v-else v-model="selectedIds" :options="filteredOptions" optionLabel="description" optionValue="id"
+      display="chip" placeholder="Selecionar Equipamentos Auxiliares" filter showClear fluid class="w-full" :disabled="filteredOptions.length === 0">
+      <template #option="slotProps">
+        <div class="flex flex-col">
+          <span class="font-bold text-sm">{{ slotProps.option.description }}</span>
+          <span class="text-xs text-surface-500">{{ slotProps.option.sapCode }}</span>
+        </div>
+      </template>
+    </MultiSelect>
   </div>
 </template>

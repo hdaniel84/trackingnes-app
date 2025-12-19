@@ -1,6 +1,8 @@
 package com.mesacer.trackingnes.trackingnes_app.service;
 
 import java.util.List;
+
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import com.mesacer.trackingnes.trackingnes_app.dto.EquipmentDTO;
 import com.mesacer.trackingnes.trackingnes_app.mapper.EquipmentMapper;
@@ -17,8 +19,8 @@ public class EquipmentServiceImpl implements EquipmentService {
         this.equipmentMapper = equipmentMapper;
     }
 
-
     public List<EquipmentDTO> findAll() {
-        return equipmentRepository.findAll().stream().map(equipmentMapper::toDTO).toList();
+        return equipmentRepository.findAll(Sort.by(Sort.Direction.ASC, "description")).stream()
+                .map(equipmentMapper::toDTO).toList();
     }
 }

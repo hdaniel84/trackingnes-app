@@ -50,7 +50,7 @@ const emit = defineEmits(['update:visible']);
                 <div class="flex flex-col gap-2 mt-1">
                     <div class="flex items-center gap-2">
                         <Tag severity="info" class="text-xs font-bold px-2">
-                            {{ props.item.product?.codigoProduto || 'S/C' }}
+                            {{ props.item.product?.productCode || 'S/C' }}
                         </Tag>
                         <Tag severity="success" class="text-xs font-bold px-2">
                             <i class="pi pi-box mr-1"></i> {{ props.item.quantity }} Peças
@@ -94,7 +94,7 @@ const emit = defineEmits(['update:visible']);
                         <i class="pi pi-truck"></i>
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-xs text-surface-500">Unidade Logística (Carro)</span>
+                        <span class="text-xs text-surface-500">Un. Logistica (Carro/Vagão/Palete)</span>
                         <span class="text-sm font-semibold">{{ props.item.logisticUnit }}</span>
                     </div>
                 </div>

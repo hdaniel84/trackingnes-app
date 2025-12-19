@@ -96,7 +96,7 @@ const handleLogin = async () => {
                         Controlo total da <span class="text-primary-300">produção.</span>
                     </h1>
                     <p class="text-lg text-primary-100/80 leading-relaxed font-light">
-                        Monitorização em tempo real, rastreabilidade lote a lote e gestão de eficiência OEE numa única
+                        Monitorização em tempo real, rastreabilidade fase a fase e gestão de eficiência numa única
                         plataforma.
                     </p>
                 </div>

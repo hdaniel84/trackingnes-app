@@ -1,6 +1,6 @@
 <script setup>
 import Dialog from 'primevue/dialog';
-import PrensasForm from './PrensasForm.vue'; 
+import TrackingForm from './TrackingForm.vue'; 
 
 const props = defineProps({
   visible: Boolean, 
@@ -22,7 +22,7 @@ const emit = defineEmits(['update:visible']);
     maximizable
     class="p-0"
   >
-    <PrensasForm 
+    <TrackingForm 
       v-if="props.visible" 
       :item="props.item" 
       mode="edit" 

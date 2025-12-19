@@ -40,14 +40,16 @@ public class TrackingController {
 
     @GetMapping("/{id}")
     public ResponseEntity<TrackingResponseDTO> getById(@PathVariable Long id) {
-        // Ya no comprobamos null aquí, porque el servicio lanza EntityNotFoundException
-        // lo cual es manejado globalmente (ver abajo) o devuelve el objeto si existe.
         return ResponseEntity.ok(service.findById(id));
     }
 
-    @GetMapping("/candidates/{phaseId}")
-    public ResponseEntity<List<TrackingSelectDTO>> getCandidates(@PathVariable Long phaseId) {
-        return ResponseEntity.ok(service.findCandidatesByPhase(phaseId));
+    @GetMapping("/candidates")
+    public ResponseEntity<List<TrackingSelectDTO>> getCandidates(
+            @RequestParam List<Long> phaseIds,
+            @RequestParam(required = false) String referenceId, // Recibimos como String
+            @RequestParam(defaultValue = "SHAPE") String filterType) {
+
+        return ResponseEntity.ok(service.findCandidates(phaseIds, referenceId, filterType));
     }
 
     @PostMapping

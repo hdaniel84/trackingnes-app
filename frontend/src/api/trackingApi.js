@@ -12,8 +12,24 @@ const TrackingService = {
 
   remove: (id) => http.delete(`/tracking/${id}`),
 
-  getCandidates: (phaseId) =>  http.get(`/tracking/candidates/${phaseId}`)
-  
+  // ACTUALIZADO: Para soportar la lógica de Vidragem/Escolha
+  // phaseIds: Array [1, 3]
+  // shapeId: String "001" (Opcional)
+  getCandidates: (phaseIds, referenceId = null, filterType = 'SHAPE') => {
+    const params = {};
+
+    if (phaseIds && Array.isArray(phaseIds)) {
+      params.phaseIds = phaseIds.join(',');
+    } else {
+      params.phaseIds = phaseIds;
+    }
+
+    if (referenceId) {
+      params.referenceId = referenceId; // Axios lo enviará como string. Perfecto.
+      params.filterType = filterType;
+    }
+    return http.get('/tracking/candidates', { params });
+  }
 };
 
 export default TrackingService;

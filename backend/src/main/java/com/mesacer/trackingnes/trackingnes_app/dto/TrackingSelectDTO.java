@@ -7,6 +7,7 @@ public class TrackingSelectDTO {
     private Long id;
     private String description; // Ej: "Taza (Lote 123) - 14:00"
     private Long productId;
-    private String codigoProduto;
+    private String productCode;
+    private String shapeId;
 
 }

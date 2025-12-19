@@ -2,6 +2,7 @@ package com.mesacer.trackingnes.trackingnes_app.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.mesacer.trackingnes.trackingnes_app.dto.TeamDTO;
@@ -21,7 +22,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public List<TeamDTO> findAll() {
-        return repository.findAll()
+        return repository.findAll(Sort.by(Sort.Direction.ASC, "description"))
                 .stream()
                 .map(mapper::toDTO)
                 .toList();

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,25 +115,37 @@ public class TrackingServiceImpl implements TrackingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TrackingSelectDTO> findCandidatesByPhase(Long phaseId) {
-        return repository.findTop100ByPhaseIdOrderByStartTimeDesc(phaseId)
-                .stream()
-                .map(t -> {
-                    TrackingSelectDTO dto = new TrackingSelectDTO();
-                    dto.setId(t.getId());
-                    if (t.getProduct() != null) {
-                        dto.setProductId(t.getProduct().getId());
-                        dto.setCodigoProduto(t.getProduct().getCodigoProduto());
-                    }
-                    
+    public List<TrackingSelectDTO> findCandidates(List<Long> phaseIds, String referenceId, String filterType) {
+        var limit = PageRequest.of(0, 100);
 
-                    // Construimos una descripción útil para el operario
-                    dto.setDescription(String.format("[ID: %s] Carro: %s - %s",
-                            t.getId().toString(),
-                            t.getLogisticUnit() != null ? t.getLogisticUnit() : "S/N",
-                            t.getProduct().getDescription()));
-                    return dto;
-                })
+        // Por defecto usamos PRODUCT_CODE si no especifican, o lo que venga
+        String type = (filterType != null) ? filterType : "PRODUCT_CODE";
+
+        Long refProductId = null;
+        String refShapeId = null;
+
+        if (referenceId != null && !referenceId.isBlank()) {
+            switch (type) {
+                case "PRODUCT_ID":
+                case "SHAPE_ID": // Si fuera numérico
+                    try {
+                        refProductId = Long.parseLong(referenceId);
+                    } catch (NumberFormatException e) {
+                        return List.of();
+                    }
+                    break;
+
+                case "PRODUCT_CODE": // CASO TEXTO (Vidragem)
+                case "SHAPE":
+                    // Aquí pasamos "W099" directamente
+                    refShapeId = referenceId;
+                    break;
+            }
+        }
+
+        return repository.findCandidates(phaseIds, refProductId, refShapeId, type, limit)
+                .stream()
+                .map(mapper::toSelectDTO)
                 .collect(Collectors.toList());
     }
 }

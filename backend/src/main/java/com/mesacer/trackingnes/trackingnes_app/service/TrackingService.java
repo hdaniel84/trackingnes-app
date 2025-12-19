@@ -13,7 +13,7 @@ public interface TrackingService {
 
     Page<TrackingResponseDTO> getAll(Long phaseId, Pageable pageable);
 
-    List<TrackingSelectDTO> findCandidatesByPhase(Long phaseId);
+    List<TrackingSelectDTO> findCandidates(List<Long> phaseIds, String referenceId, String filterType);
 
     TrackingResponseDTO findById(Long id);
 

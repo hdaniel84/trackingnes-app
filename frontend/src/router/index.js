@@ -13,19 +13,80 @@ const router = createRouter({
         {
             path: '/prensas',
             name: 'prensas',
-            component: () => import('@/views/pages/tracking/prensas/PrensasMain.vue'),
+            component: () => import('@/views/pages//tracking/TrackingMain.vue'),
             meta: {
                 requiresAuth: true,
-                requiredPrivilege: 'WRITE_PRENSAS'
+                title: 'Prensas',
+                icon: 'pi pi-cog',
+                permission: 'PRENSAS',
+                phaseId: 1,
+                slug: 1,
             }
         },
         {
             path: '/vidragem',
             name: 'vidragem',
-            component: () => import('@/views/pages//tracking/vidragem/VidragemMain.vue'),
+            component: () => import('@/views/pages//tracking/TrackingMain.vue'),
             meta: {
                 requiresAuth: true,
-                requiredPrivilege: 'WRITE_VIDRAGEM'
+                phaseId: 3,
+                title: 'Vidragem',         // Título para el Header
+                icon: 'pi pi-sliders-h',
+                slug: 3,                   // Para filtrar equipamentos por section (filterSection)
+                permission: 'VIDRAGEM'     //Cada formulario maneja internamente el WRITE_ o READ_
+            }
+        },
+        {
+            path: '/forno-entrada',
+            name: 'forno-entrada',
+            component: () => import('@/views/pages//tracking/TrackingMain.vue'),
+            meta: {
+                requiresAuth: true,
+                phaseId: 5,
+                title: 'Forno (Entrada)',
+                icon: 'pi pi-sign-in',
+                slug: 5,
+                permission: 'FORNO_ENTRADA',
+                teamSlug: 3,    // Override para filtrar Equipos (Ej. Forno Entrada debe mostrar el equipo de Vidragem)
+            }
+        },
+        {
+            path: '/forno-saida',
+            name: 'forno-saida',
+            component: () => import('@/views/pages/tracking/TrackingMain.vue'),
+            meta: {
+                requiresAuth: true,
+                phaseId: 6,
+                title: 'Forno (Saída)',
+                icon: 'pi pi-sign-out',
+                slug: 5,
+                permission: 'FORNO_SAIDA' //Cada formulario maneja internamente el WRITE_ o READ_
+            }
+        },
+        {
+            path: '/escolha',
+            name: 'escolha',
+            component: () => import('@/views/pages/tracking/TrackingMain.vue'),
+            meta: {
+                requiresAuth: true,
+                phaseId: 7,
+                title: 'Escolha',
+                icon: 'pi pi-check-square',
+                slug: 6,
+                permission: 'ESCOLHA' //Cada formulario maneja internamente el WRITE_ o READ_
+            }
+        },
+        {
+            path: '/embalagem',
+            name: 'embalagem',
+            component: () => import('@/views/pages/tracking/TrackingMain.vue'),
+            meta: {
+                requiresAuth: true,
+                phaseId: 9,
+                title: 'Embalagem',
+                icon: 'pi pi-box',
+                slug: 7,
+                permission: 'ESCOLHA' //Cada formulario maneja internamente el WRITE_ o READ_
             }
         },
 
@@ -58,7 +119,7 @@ const router = createRouter({
 });
 
 // =============================================================================
-// 🔒 GLOBAL NAVIGATION GUARD
+// GLOBAL NAVIGATION GUARD
 // Aquí es donde ocurre la magia de la seguridad
 // =============================================================================
 router.beforeEach((to, from, next) => {

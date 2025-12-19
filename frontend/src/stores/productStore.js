@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { getProducts } from '@/api/productApi';
+import ProductApi from '@/api/productApi'; // Importamos el objeto completo
 
 export const useProductStore = defineStore('product', {
   state: () => ({
@@ -12,10 +12,12 @@ export const useProductStore = defineStore('product', {
       this.loading = true;
       this.error = null;
       try {
-        const response = await getProducts();
+        // Usamos el método getAll del objeto importado
+        const response = await ProductApi.getAll();
         this.items = response.data;
       } catch (err) {
-        this.error = 'Erro ao cargar dados';
+        console.error(err);
+        this.error = 'Erro ao carregar produtos';
       } finally {
         this.loading = false;
       }

@@ -17,28 +17,28 @@ const model = computed(() => {
         {
             label: 'Produção',
             items: [
-                { 
-                    label: 'Prensas', 
-                    icon: 'pi pi-fw pi-chart-scatter', 
+                {
+                    label: 'Prensas',
+                    icon: 'pi pi-fw pi-chart-scatter',
                     to: '/prensas',
                     // 🔒 SEGURIDAD: Solo visible si tiene permiso
                     visible: auth.hasPrivilege('READ_PRENSAS') || auth.hasPrivilege('WRITE_PRENSAS'),
                     // 🔔 BADGE: Ejemplo de contador (conectarlo a un store de alertas)
-                    badge: 0, 
-                    badgeSeverity: 'danger' 
+                    badge: 0,
+                    badgeSeverity: 'danger'
                 },
-                { 
-                    label: 'Vidragem', 
-                    icon: 'pi pi-fw pi-bullseye', 
-                    to: '/vidragem', 
+                {
+                    label: 'Vidragem',
+                    icon: 'pi pi-fw pi-bullseye',
+                    to: '/vidragem',
                     class: 'rotated-icon',
-                    visible: auth.hasPrivilege('READ_VIDRAGEM') || auth.hasPrivilege('WRITE_VIDRAGEM') 
+                    visible: auth.hasPrivilege('READ_VIDRAGEM') || auth.hasPrivilege('WRITE_VIDRAGEM')
                 },
-                { label: 'KeraJet', icon: 'pi pi-fw pi-print', to: '/uikit/table' },
+                //{ label: 'KeraJet', icon: 'pi pi-fw pi-print', to: '/uikit/table' },
                 { label: 'Forno Entrada', icon: 'pi pi-fw pi-gauge', to: '/forno-entrada' },
-                { label: 'Forno Saída', icon: 'pi pi-fw pi-external-link', to: '/uikit/tree' },
-                { label: 'Escolha', icon: 'pi pi-fw pi-eye', to: '/uikit/panel' },
-                { label: 'Embalagem', icon: 'pi pi-fw pi-box', to: '/uikit/overlay' },
+                { label: 'Forno Saída', icon: 'pi pi-fw pi-external-link', to: '/forno-saida' },
+                { label: 'Escolha', icon: 'pi pi-fw pi-eye', to: '/escolha' },
+                { label: 'Embalagem', icon: 'pi pi-fw pi-box', to: '/embalagem' },
             ]
         },
         {
@@ -64,7 +64,8 @@ const model = computed(() => {
 <template>
     <ul class="layout-menu">
         <template v-for="(item, i) in model">
-            <app-menu-item v-if="!item.separator && item.visible !== false" :key="item.label || i" :item="item" :index="i"></app-menu-item>
+            <app-menu-item v-if="!item.separator && item.visible !== false" :key="item.label || i" :item="item"
+                :index="i"></app-menu-item>
             <li v-if="item.separator" class="menu-separator" :key="'separator-' + i"></li>
         </template>
     </ul>

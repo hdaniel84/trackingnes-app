@@ -1,72 +1,83 @@
 <script setup>
-import { onMounted, computed } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import Select from 'primevue/select';
-import { useProductStore } from '@/stores/productStore';
+import ProductApi from '@/api/productApi'; // Asegúrate de tener este import
 
 const props = defineProps({
-  modelValue: { type: Object, default: null }
+  modelValue: { type: Object, default: null },
+  prefixes: { type: Array, default: () => [] }, // 🚀 Nuevo Prop
+  label: { type: String, default: 'Artigo / Produto' }
 });
 
 const emit = defineEmits(['update:modelValue']);
-const store = useProductStore();
 
-// Usamos un computed con get/set para manejar el v-model limpiamente
-const selectedProduct = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
-});
+const items = ref([]);
+const loading = ref(false);
+const error = ref(null);
 
-onMounted(async () => {
-  if (store.items.length === 0) {
-    await store.fetchProducts();
-  }
+// Función para cargar productos filtrados
+const fetchProducts = async () => {
+    loading.value = true;
+    error.value = null;
+    try {
+        // Llamamos al endpoint que acepta ?prefixes=FF,W
+        const response = await ProductApi.getByPrefixes(props.prefixes);
+        items.value = response.data;
+    } catch (err) {
+        error.value = 'Erro ao carregar produtos.';
+        console.error(err);
+    } finally {
+        loading.value = false;
+    }
+};
+
+// Si cambian los prefijos (ej: cambio de fase dinámica), recargamos
+watch(() => props.prefixes, () => {
+    fetchProducts();
+}, { deep: true });
+
+onMounted(() => {
+    fetchProducts();
 });
 </script>
 
 <template>
   <div class="w-full">
-    <div v-if="store.loading" class="flex items-center gap-2 text-surface-500">
-      <i class="pi pi-spin pi-spinner" style="font-size: 1.2rem"></i>
-      <span class="text-sm">A carregar produtos...</span>
-    </div>
+    <div v-if="error" class="text-red-500 text-xs mb-1">{{ error }}</div>
 
-    <div v-else-if="store.error" class="text-red-500 text-sm">
-      {{ store.error }}
-    </div>
-
-    <div v-else>
-      <label for="productSelect" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">
-        Artigo / Produto
-      </label>
+    <label v-if="label" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">
+       {{ label }}
+    </label>
       
-      <Select
-        id="productSelect"
-        v-model="selectedProduct"
-        :options="store.items"
+    <Select
+        :modelValue="modelValue"
+        @update:modelValue="(val) => emit('update:modelValue', val)"
+        :options="items"
         optionLabel="description"
         placeholder="Seleciona um produto"
         dataKey="id" 
         filter
-        :filterFields="['codigoProduto', 'description']"
+        :filterFields="['productCode', 'description']"
         showClear
         fluid
         class="w-full"
-      >
+        :loading="loading"
+        :virtualScrollerOptions="{ itemSize: 38 }" 
+    >
         <template #option="slotProps">
           <div class="flex flex-col">
-            <span class="font-bold text-sm">{{ slotProps.option.codigoProduto }}</span>
+            <span class="font-bold text-sm">{{ slotProps.option.productCode }}</span>
             <span class="text-sm text-surface-600 dark:text-surface-400">{{ slotProps.option.description }}</span>
           </div>
         </template>
         
         <template #value="slotProps">
-          <div v-if="slotProps.value" class="flex gap-2">
-            <span class="font-bold">{{ slotProps.value.codigoProduto }}</span>
-            <span>- {{ slotProps.value.description }}</span>
+          <div v-if="slotProps.value" class="flex gap-2 items-center">
+            <span class="font-bold bg-primary-100 text-primary-700 px-2 rounded text-xs">{{ slotProps.value.productCode }}</span>
+            <span class="truncate">{{ slotProps.value.description }}</span>
           </div>
           <span v-else>{{ slotProps.placeholder }}</span>
         </template>
-      </Select>
-    </div>
+    </Select>
   </div>
 </template>

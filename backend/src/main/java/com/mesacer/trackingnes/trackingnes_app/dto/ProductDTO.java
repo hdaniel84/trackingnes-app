@@ -11,7 +11,7 @@ public class ProductDTO {
 
     @NotBlank
     @NotNull(message = "Campo obrigatório")
-    private String codigoProduto;
+    private String productCode;
 
     @NotBlank
     @NotNull(message = "Campo obrigatório")
