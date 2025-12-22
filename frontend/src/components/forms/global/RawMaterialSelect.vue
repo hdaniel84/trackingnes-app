@@ -7,17 +7,29 @@ import Select from 'primevue/select';
 
 const props = defineProps({
   modelValue: { type: [Number, String, null], default: null },
-  phaseId: { type: Number, default: null }
+  phaseId: { type: Number, default: null },
+  // NUEVAS PROP
+  disabled: { type: Boolean, default: false },
+  excludedIds: { type: Array, default: () => [] }
 });
 
 const emit = defineEmits(['update:modelValue']);
 const store = useRawMaterialStore();
 
-// 🔹 Lógica de Filtrado por Fase
 const filteredItems = computed(() => {
   const items = store.items;
+
   if (!props.phaseId) return items;
-  return items.filter(item => item.phase?.id === props.phaseId);
+
+  return items.filter(item => {
+    const matchPhase = !props.phaseId || item.phase?.id === props.phaseId;
+
+    // 2. Filtro de Exclusión (Nuevo)
+    // Si el ID está en la lista de excluidos, NO lo mostramos
+    const isExcluded = props.excludedIds.includes(item.id);
+
+    return matchPhase && !isExcluded;
+  });
 });
 
 const selectedValue = computed({
@@ -30,13 +42,14 @@ const selectedValue = computed({
 });
 
 onMounted(async () => {
-  await store.fetchAll();
+  // Optimización: Solo cargar si está vacío para evitar llamadas repetidas en listas
+  if (store.items.length === 0) await store.fetchAll();
 });
 </script>
 
 <template>
   <div class="w-full">
-    <div v-if="store.loading" class="flex items-center justify-center py-2">
+    <div v-if="store.loading && store.items.length === 0" class="flex items-center justify-center py-2">
       <ProgressSpinner style="width: 25px; height: 25px" strokeWidth="6" />
     </div>
 
@@ -47,7 +60,8 @@ onMounted(async () => {
     <div v-else>
       <Select v-model="selectedValue" :options="filteredItems" optionLabel="description"
         placeholder="Selecione Matéria Prima" filter :filterFields="['sapCode', 'description']" showClear fluid
-        class="w-full">
+        class="w-full" :disabled="props.disabled">
+        
         <template #option="slotProps">
           <div class="flex flex-col">
             <span class="font-bold text-sm">{{ slotProps.option.sapCode }}</span>

@@ -5,6 +5,7 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { ref, computed, watch } from 'vue';
 import { usePhase } from '@/layout/composables/usePhase';
 import TrackingService from '@/api/trackingApi';
+import { useRawMaterialStore } from '@/stores/rawMaterialStore';
 
 // Helpers & UI
 import { useNotify } from '@/layout/composables/notify';
@@ -36,6 +37,7 @@ const emit = defineEmits(['success', 'cancel']);
 // 1. CONTEXTO DINÁMICO (Router & Rules)
 const { phaseId, currentRules, phaseMetadata } = usePhase();
 const store = useTrackingStore();
+const rawMaterialStore = useRawMaterialStore();
 const { notifySuccess, notifyError } = useNotify();
 const { showErrorDialog } = useErrorDialog();
 const errorList = computed(() => {
@@ -68,6 +70,58 @@ const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta, values: 
     auxiliaryEquipmentIds: []
   }
 });
+
+//inyeccion de rawMterials mandatory
+const injectMandatoryRawMaterials = async () => {
+  // 1. Cargar datos si faltan
+  if (rawMaterialStore.items.length === 0) {
+    await rawMaterialStore.fetchAll();
+  }
+
+  // 2. Filtrar obligatorios de la fase actual
+  const currentPhaseId = Number(phaseId.value);
+  const mandatoryItems = rawMaterialStore.items.filter(rm =>
+    rm.mandatory === true &&
+    rm.phase?.id === currentPhaseId
+  );
+
+  // Si no hay obligatorios, no tocamos nada (se queda la fila vacía si existía)
+  if (mandatoryItems.length === 0) return;
+
+  // 3. Preparar filas actuales
+  let currentRows = formValues.rawMaterials || [];
+
+  // 🚀 FIX: Si la única fila que existe está vacía (default), la marcamos para borrar
+  // Esto evita: [ vacía, obligatoria1, obligatoria2 ]
+  const isDefaultEmptyRow = currentRows.length === 1 && !currentRows[0].rawMaterialId && !currentRows[0].value;
+
+  // Si es la fila por defecto, empezamos con un array limpio
+  let mergedRows = isDefaultEmptyRow ? [] : [...currentRows];
+  let hasChanges = isDefaultEmptyRow; // Si borramos la fila vacía, ya cuenta como cambio
+
+  // 4. Inyectar obligatorios
+  mandatoryItems.forEach(mandatory => {
+    // Verificamos si ya está en el array que vamos a guardar
+    const exists = mergedRows.some(row => row.rawMaterialId === mandatory.id);
+
+    if (!exists) {
+      mergedRows.push({
+        id: null,
+        rawMaterialId: mandatory.id,
+        value: ''
+      });
+      hasChanges = true;
+    }
+  });
+
+  // 5. Aplicar cambios al formulario
+  if (hasChanges) {
+    setValues({
+      ...formValues,
+      rawMaterials: mergedRows
+    });
+  }
+};
 
 // Definición de campos (para v-model manual si es necesario)
 const { value: product } = useField('product');
@@ -151,9 +205,18 @@ watch(() => props.item, async (val) => {
     if (showTrackingSource.value && val.trackingSourceId) {
       await loadSourceDetails(val.trackingSourceId);
     }
+
+    await injectMandatoryRawMaterials();
   }
 }, { immediate: true });
 
+// Caso A: Creación / Cambio de Fase
+watch(phaseId, async (newId) => {
+  if (newId) {
+    // 🚀 Inyectar obligatorios después del reset
+    await injectMandatoryRawMaterials();
+  }
+}, { immediate: true });
 
 // 6. SUBMIT
 const onSubmit = handleSubmit(async (values) => {
@@ -168,11 +231,13 @@ const onSubmit = handleSubmit(async (values) => {
       valueDate: p.valueDate ? new Date(p.valueDate).toISOString() : null
     }));
 
-    const rawMaterialsPayload = (values.rawMaterials || []).map(r => ({
-      id: r.id,
-      rawMaterialId: r.rawMaterialId,
-      value: r.value
-    }));
+    const rawMaterialsPayload = (rawMaterials.value || [])
+      .filter(r => r.rawMaterialId)
+      .map(r => ({
+        id: r.id,
+        rawMaterialId: r.rawMaterialId,
+        value: r.value
+      }));
 
     const payload = {
       // Campos directos

@@ -5,7 +5,8 @@ export const PHASE_RULES = {
     1: {
         productFilter: ['W'],
         allowedSourcePhases: [],
-        matchReference: false
+        matchReference: false,
+        hideRawMaterials: false
     },
     // 3: VIDRAGEM
     3: {
