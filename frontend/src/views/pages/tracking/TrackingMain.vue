@@ -7,7 +7,7 @@ const { phaseId } = usePhase();
 
 <template>
     <Fluid>
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 lg:items-stretch">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-2 p-2">
             <div class="lg:col-span-9 flex">
                 <TrackingTabs class="flex-1" />
             </div>

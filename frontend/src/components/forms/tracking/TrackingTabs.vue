@@ -60,7 +60,7 @@ const saveTitle = (press) => {
 </script>
 
 <template>
-    <div class="w-full flex flex-col h-full min-h-screen bg-surface-50 dark:bg-surface-950">
+    <div class="w-full flex flex-col h-full min-h-screen">
         
         <div class="flex flex-col flex-1 bg-surface-0 dark:bg-surface-900 shadow-sm border border-surface-200 dark:border-surface-700 m-2 rounded-xl overflow-hidden">
             

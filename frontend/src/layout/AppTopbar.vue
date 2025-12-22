@@ -74,7 +74,7 @@ const toggleUserMenu = (event) => {
                 <img :src="myLogo" alt="Webapps" class="h-10 w-10 transition-transform group-hover:scale-110 duration-300" />
                 <div class="flex flex-col">
                     <span class="font-bold text-lg text-surface-900 dark:text-surface-0 tracking-tight leading-none">TrackingNes</span>
-                    <span class="text-[10px] uppercase font-bold text-primary-600 tracking-widest leading-none mt-1">Enterprise</span>
+                    <span class="text-[10px] uppercase font-bold text-primary-600 tracking-widest leading-none mt-1">MesaCer</span>
                 </div>
             </router-link>
         </div>
@@ -82,7 +82,7 @@ const toggleUserMenu = (event) => {
         <div class="hidden md:flex flex-1 max-w-md mx-4">
             <IconField class="w-full">
                 <InputIcon class="pi pi-search text-surface-400" />
-                <InputText 
+                <InputText name="global_search"
                     placeholder="Pesquisar lotes, ordens, produtos..." 
                     class="w-full rounded-full bg-surface-100 dark:bg-surface-800 border-none px-10 py-2 focus:ring-2 focus:ring-primary-500 transition-all" 
                 />

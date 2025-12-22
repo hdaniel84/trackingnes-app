@@ -2,14 +2,12 @@ package com.mesacer.trackingnes.trackingnes_app.mapper;
 
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingRequestDTO;
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingResponseDTO;
-import com.mesacer.trackingnes.trackingnes_app.dto.TrackingSelectDTO;
-import com.mesacer.trackingnes.trackingnes_app.model.*; // Importar todas las entidades
-
-import java.time.format.DateTimeFormatter;
+import com.mesacer.trackingnes.trackingnes_app.model.*;
 
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", uses = { TrackingParameterMapper.class, TrackingRawMaterialMapper.class })
+@Mapper(componentModel = "spring", uses = { TrackingParameterMapper.class, TrackingRawMaterialMapper.class,
+        TeamMapper.class, EntityReferenceMapper.class })
 public interface TrackingMapper {
 
     // --- MAPPING DE ENTRADA (Request -> Entity) ---
@@ -41,77 +39,12 @@ public interface TrackingMapper {
     @Mapping(target = "createdByUsername", ignore = true)
     TrackingResponseDTO toResponseDTO(Tracking entity);
 
-    // ========================================================================
-    // HELPERS: Convierten Long -> Entidad (Referencia)
-    // Esto evita que MapStruct intente modificar el ID de la entidad existente
-    // ========================================================================
-
-    default Team mapTeam(Long id) {
-        if (id == null)
-            return null;
-        Team t = new Team();
-        t.setId(id);
-        return t;
-    }
-
-    default Shift mapShift(Long id) {
-        if (id == null)
-            return null;
-        Shift s = new Shift();
-        s.setId(id);
-        return s;
-    }
-
-    default Product mapProduct(Long id) {
-        if (id == null)
-            return null;
-        Product p = new Product();
-        p.setId(id);
-        return p;
-    }
-
-    default Equipment mapEquipment(Long id) {
-        if (id == null)
-            return null;
-        Equipment e = new Equipment();
-        e.setId(id);
-        return e;
-    }
-
-    default Phase mapPhase(Long id) {
-        if (id == null)
-            return null;
-        Phase p = new Phase();
-        p.setId(id);
-        return p;
-    }
-
     default Tracking mapTrackingRef(Long id) {
         if (id == null)
             return null;
         Tracking t = new Tracking();
         t.setId(id);
         return t;
-    }
-
-    // TrackingSelect
-    @Mapping(source = "product.id", target = "productId")
-    @Mapping(source = "product.productCode", target = "productCode")
-    @Mapping(source = "product.shape.id", target = "shapeId")
-    @Mapping(target = "description", source = ".", qualifiedByName = "formatDescription")
-    TrackingSelectDTO toSelectDTO(Tracking tracking);
-
-    @Named("formatDescription")
-    default String formatDescription(Tracking tracking) {
-        if (tracking == null || tracking.getProduct() == null)
-            return "";
-
-        // 3. Construir string"
-        return String.format("[ID: %s] Carro: %s (%s) - %s",
-                tracking.getId().toString(),
-                tracking.getLogisticUnit().toString() ,
-                tracking.getPhase().getDescription(),
-                tracking.getProduct().getDescription());
     }
 
 }

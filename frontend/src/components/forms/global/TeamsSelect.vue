@@ -58,7 +58,7 @@ onMounted(async () => {
     </div>
 
     <div v-else>
-      <label for="teamSelect" class="block text-xs font-medium text-surface-500 mb-1 ml-1">
+      <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">
         Equipa
       </label>
 

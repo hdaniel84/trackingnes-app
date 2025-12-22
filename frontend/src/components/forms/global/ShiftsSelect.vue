@@ -36,20 +36,26 @@ onMounted(async () => {
     </div>
 
     <div v-else>
-      <label for="shiftSelect" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">
+      <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">
         Turno
       </label>
-      <Select
-        id="shiftSelect"
-        v-model="selectedShift"
-        :options="store.items"
-        optionLabel="description"
-        placeholder="Seleciona turno"
-        dataKey="id"
-        showClear
-        fluid
-        class="w-full"
-      />
+      <Select id="shiftSelect" v-model="selectedShift" :options="store.items" optionLabel="description"
+        placeholder="Seleciona turno" dataKey="id" showClear fluid class="w-full">
+
+        <template #option="slotProps">
+          <div class="flex flex-col">
+            <span class="font-bold text-sm">{{ slotProps.option.description.split('-')[0] }}</span>
+            <span class="text-xs text-surface-500">{{ slotProps.option.description.split('-')[1] }}</span>
+          </div>
+        </template>
+
+        <template #value="slotProps">
+          <div v-if="slotProps.value" class="flex items-center gap-2">
+            <span>{{ slotProps.value.description }}</span>
+          </div>
+          <span v-else>{{ slotProps.placeholder }}</span>
+        </template>
+      </Select>
     </div>
   </div>
 </template>

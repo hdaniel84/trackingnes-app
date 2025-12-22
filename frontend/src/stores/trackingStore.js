@@ -61,6 +61,24 @@ export const useTrackingStore = defineStore('tracking', {
       }
     },
 
+    async getCandidates({ phaseIds, referenceId = null, filterType = 'SHAPE' } = {}) {
+      const params = {};
+
+      if (phaseIds && Array.isArray(phaseIds)) {
+        params.phaseIds = phaseIds.join(',');
+      } else {
+        params.phaseIds = phaseIds;
+      }
+
+      if (referenceId) {
+        params.referenceId = referenceId; // Axios lo enviará como string. Perfecto.
+        params.filterType = filterType;
+      }
+      //return http.get('/tracking/candidates', { params });
+      const response = await TrackingService.getCandidates(params);
+      this.items = response.data;
+    },
+
     async fetchById(id) {
       this.loading = true;
       this.error = null;

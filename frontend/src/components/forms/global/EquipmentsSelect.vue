@@ -70,7 +70,7 @@ onMounted(async () => {
     </div>
 
     <div v-else>
-      <label for="equipmentSelect" class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">
+      <label class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">
         Equipamento Principal
       </label>
 

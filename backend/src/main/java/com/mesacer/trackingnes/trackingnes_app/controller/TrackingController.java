@@ -2,7 +2,6 @@ package com.mesacer.trackingnes.trackingnes_app.controller;
 
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingRequestDTO;
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingResponseDTO;
-import com.mesacer.trackingnes.trackingnes_app.dto.TrackingSelectDTO;
 import com.mesacer.trackingnes.trackingnes_app.service.TrackingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +43,7 @@ public class TrackingController {
     }
 
     @GetMapping("/candidates")
-    public ResponseEntity<List<TrackingSelectDTO>> getCandidates(
+    public ResponseEntity<List<TrackingResponseDTO>> getCandidates(
             @RequestParam List<Long> phaseIds,
             @RequestParam(required = false) String referenceId, // Recibimos como String
             @RequestParam(defaultValue = "SHAPE") String filterType) {

@@ -125,7 +125,7 @@ const handleRefresh = () => { loadData(); };
 
           <div class="flex justify-between items-center mt-3 pt-2 border-t border-surface-200 dark:border-surface-700">
             <div class="text-xs italic text-surface-500 dark:text-surface-400 truncate max-w-[75%]">
-              <i class="pi pi-users mr-1"></i> {{ item.team?.description }}
+              <i class="pi pi-users mr-1"></i> {{ item.team?.description }} - {{ item.team?.sectionDescription }}
             </div>
 
             <Button v-can="`WRITE_${phaseMetadata.permissionSuffix}`" icon="pi pi-pencil" text rounded

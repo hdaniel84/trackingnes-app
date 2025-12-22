@@ -1,86 +1,116 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import TrackingService from '@/api/trackingApi';
+import TrackingService from '@/api/trackingApi'; // 1. Usamos la API directamente para no ensuciar el Store global
 import Select from 'primevue/select';
 import Message from 'primevue/message';
 
 const props = defineProps({
     modelValue: { type: [Number, String], default: null },
     allowedPhases: { type: Array, required: true },
-
     targetReferenceId: { type: [String, Number], default: null },
-
-    matchReference: { type: Boolean, default: false }, // ✅ Nombre correcto
-    filterType: { type: String, default: 'PRODUCT_ID' },    // 'PRODUCT' o 'SHAPE'
-
+    matchReference: { type: Boolean, default: false },
+    filterType: { type: String, default: 'PRODUCT_ID' },
     label: { type: String, default: 'Origem' },
     disabled: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['update:modelValue']);
 
-const items = ref([]);
+// 2. Estado LOCAL (Descomentamos lo que tenías, es la forma correcta)
+const items = ref([]); 
 const loading = ref(false);
 const error = ref(null);
 
 const fetchCandidates = async () => {
-    // Si la regla exige coincidencia, pero no tenemos ID de referencia, no buscamos
+    // Validación: Si exige coincidencia pero no hay referencia, limpiamos y salimos
     if (props.matchReference && !props.targetReferenceId) {
         items.value = [];
         return;
     }
 
     loading.value = true;
-    error.value = null; // Limpiar errores previos
+    error.value = null;
+
     try {
-        const response = await TrackingService.getCandidates(
-            props.allowedPhases,
-            props.matchReference ? props.targetReferenceId : null,
-            props.filterType
-        );
+        // 3. Llamada directa al servicio. 
+        // Obtenemos los datos SIN modificar el 'store.items' global.
+        const response = await TrackingService.getCandidates({
+             phaseIds: props.allowedPhases.join(','), // Aseguramos formato array -> string si tu API lo requiere así
+             referenceId: props.matchReference ? props.targetReferenceId : null,
+             filterType: props.filterType
+        });
+        
         items.value = response.data;
+
     } catch (err) {
         error.value = 'Erro ao carregar registos de origem.';
         console.error("TrackingSourceSelect Error:", err);
+        items.value = [];
     } finally {
         loading.value = false;
     }
 };
 
-// 1. Cargar al montar
+// 4. Ciclo de Vida
 onMounted(() => {
+    // Si no requiere referencia O si ya tiene referencia, cargamos.
     if (!props.matchReference || props.targetReferenceId) {
         fetchCandidates();
     }
 });
 
+// 5. Watcher: Si cambia el producto padre, recargamos las opciones de origen
 watch(() => props.targetReferenceId, (newVal, oldVal) => {
-    if (newVal !== oldVal) emit('update:modelValue', null);
-    fetchCandidates();
+    if (newVal !== oldVal) {
+        emit('update:modelValue', null); // Reseteamos la selección si cambia el padre
+        fetchCandidates();
+    }
 });
 </script>
 
 <template>
     <div class="w-full">
-        <label class="block font-semibold text-surface-700 dark:text-surface-200 mb-2">
+        <label class="block font-semibold text-surface-700 dark:text-surface-200 mb-2 text-xs">
             {{ label }}
         </label>
 
         <div v-if="error">
-            <Message severity="error" :closable="false">{{ error }}</Message>
+            <Message severity="error" :closable="false" size="small">{{ error }}</Message>
         </div>
 
-        <Select :modelValue="modelValue" @update:modelValue="(val) => emit('update:modelValue', val)" :options="items"
-            optionLabel="description" optionValue="id" :loading="loading" dataKey="id"
+        <Select 
+            :modelValue="modelValue" 
+            @update:modelValue="(val) => emit('update:modelValue', val)" 
+            :options="items"
+            optionLabel="id" 
+            optionValue="id" 
+            :loading="loading" 
+            dataKey="id"
             :placeholder="props.matchReference && !props.targetReferenceId ? 'Selecione primeiro o produto acima' : 'Selecione o registo de origem'"
-            filter showClear fluid class="w-full"
-            :disabled="disabled || (props.matchReference && !props.targetReferenceId)">
+            filter 
+            showClear 
+            fluid 
+            class="w-full"
+            :disabled="disabled || (props.matchReference && !props.targetReferenceId)"
+        >
             <template #option="slotProps">
                 <div class="flex flex-col">
-                    <span class="font-bold text-sm">{{ slotProps.option.description.split(' - ')[0] }}</span>
-                    <span class="text-xs text-surface-500">{{ slotProps.option.description.split(' - ')[1] || ''
-                        }}</span>
+                    <span class="font-bold text-sm">
+                        ID# {{ slotProps.option.id }} | 
+                        {{ slotProps.option.logisticUnit ? 'Carro: ' + slotProps.option.logisticUnit : 'S/ Carro' }}
+                    </span>
+                    <span class="text-xs text-surface-500">
+                        {{ slotProps.option.product?.description || 'Produto Desconhecido'}} 
+                        ({{ slotProps.option.phase?.description }})
+                    </span>
                 </div>
+            </template>
+
+            <template #value="slotProps">
+                <div v-if="slotProps.value" class="flex flex-col text-sm">
+                     <span class="font-bold">ID# {{ slotProps.value }}</span> 
+                     </div>
+                <span v-else>{{ slotProps.placeholder }}</span>
             </template>
 
             <template #empty>

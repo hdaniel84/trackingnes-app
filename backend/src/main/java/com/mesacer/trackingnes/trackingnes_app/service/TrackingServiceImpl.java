@@ -2,7 +2,6 @@ package com.mesacer.trackingnes.trackingnes_app.service;
 
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingRequestDTO;
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingResponseDTO;
-import com.mesacer.trackingnes.trackingnes_app.dto.TrackingSelectDTO;
 import com.mesacer.trackingnes.trackingnes_app.mapper.TrackingMapper;
 import com.mesacer.trackingnes.trackingnes_app.model.Tracking;
 import com.mesacer.trackingnes.trackingnes_app.repository.TrackingRepository;
@@ -115,7 +114,7 @@ public class TrackingServiceImpl implements TrackingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TrackingSelectDTO> findCandidates(List<Long> phaseIds, String referenceId, String filterType) {
+    public List<TrackingResponseDTO> findCandidates(List<Long> phaseIds, String referenceId, String filterType) {
         var limit = PageRequest.of(0, 100);
 
         // Por defecto usamos PRODUCT_CODE si no especifican, o lo que venga
@@ -145,7 +144,7 @@ public class TrackingServiceImpl implements TrackingService {
 
         return repository.findCandidates(phaseIds, refProductId, refShapeId, type, limit)
                 .stream()
-                .map(mapper::toSelectDTO)
+                .map(mapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 }

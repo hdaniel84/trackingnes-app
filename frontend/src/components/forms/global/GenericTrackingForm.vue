@@ -338,7 +338,7 @@ const onSubmit = handleSubmit(async (values) => {
                   </p>
                   <span class="text-xs text-surface-500">
                     ID: {{ currentSourceDetails.id }} |
-                    {{ currentSourceDetails.logisticUnit ? 'Carro: ' + currentSourceDetails.logisticUnit : 'Lote' }}
+                    {{ currentSourceDetails.logisticUnit ? 'Carro: ' + currentSourceDetails.logisticUnit : 'N/A' }}
                   </span>
                 </div>
               </div>
@@ -364,7 +364,7 @@ const onSubmit = handleSubmit(async (values) => {
           <div class="col-span-6 md:col-span-3">
             <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">
               <div v-if="phaseId <= 4"> Carro (Un. Logística)</div>
-              <div v-else-if="phaseId <= 6"> Vagão (Un. Logística)</div>
+              <div v-else-if="phaseId <= 5"> Vagão (Un. Logística)</div>
               <div v-else> Palete (Un. Logística)</div>
             </label>
             <InputNumber v-model="logisticUnit" :useGrouping="false" fluid class="w-full" placeholder="Ex: 123" />
@@ -458,15 +458,12 @@ const onSubmit = handleSubmit(async (values) => {
 
       <div>
         <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Observações / Comentários</label>
-        <Textarea v-model="comments" rows="3" class="w-full" placeholder="Informação adicional relevante..." />
+        <Textarea id="comments" v-model="comments" rows="3" class="w-full" placeholder="Informação adicional relevante..." />
       </div>
 
       <Divider />
 
       <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pb-2">
-        <Button label="Cancelar" icon="pi pi-times" severity="secondary" text @click="$emit('cancel')"
-          class="w-full sm:w-auto" />
-
         <Button type="submit" label="Guardar Registo" icon="pi pi-check" :loading="isSubmitting"
           class="w-full sm:w-auto px-6 font-bold" v-can="writePermission" />
       </div>
@@ -484,12 +481,7 @@ const onSubmit = handleSubmit(async (values) => {
           </li>
         </ul>
       </div>
-
       <Divider />
-
-
-
-
     </form>
   </div>
 </template>

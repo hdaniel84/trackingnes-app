@@ -71,8 +71,7 @@ onMounted(async () => {
 
         <template #value="slotProps">
           <div v-if="slotProps.value" class="flex gap-2 text-sm">
-            <span class="font-bold">{{ slotProps.value.sapCode }}</span>
-            <span>- {{ slotProps.value.description }}</span>
+            <span>{{ slotProps.value.description }}</span>
           </div>
           <span v-else>{{ slotProps.placeholder }}</span>
         </template>

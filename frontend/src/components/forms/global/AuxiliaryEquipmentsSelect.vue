@@ -40,7 +40,7 @@ onMounted(() => {
       <ProgressSpinner style="width:20px;height:20px" />
     </div>
     <MultiSelect v-else v-model="selectedIds" :options="filteredOptions" optionLabel="description" optionValue="id"
-      display="chip" placeholder="Selecionar Equipamentos Auxiliares" filter showClear fluid class="w-full" :disabled="filteredOptions.length === 0">
+      display="chip" inputId="aux_select" placeholder="Selecionar Equipamentos Auxiliares" filter showClear fluid class="w-full" :disabled="filteredOptions.length === 0">
       <template #option="slotProps">
         <div class="flex flex-col">
           <span class="font-bold text-sm">{{ slotProps.option.description }}</span>

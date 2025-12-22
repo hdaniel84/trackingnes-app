@@ -72,7 +72,7 @@ const updateRow = (index, field, value) => {
 
     <div v-for="(row, index) in (modelValue || [])" :key="index" class="flex gap-3 items-start relative">
 
-      <div class="w-1/2 relative">
+      <div class="w-3/5 relative">
         <RawMaterialSelect :modelValue="row.rawMaterialId" :phaseId="props.phaseId"
           :disabled="isMandatory(row.rawMaterialId)" :excludedIds="getExcludedIds(index)"
           @update:modelValue="(val) => updateRow(index, 'rawMaterialId', val)" />
@@ -83,6 +83,7 @@ const updateRow = (index, field, value) => {
 
       <div class="flex-1">
         <InputText :modelValue="row.value" placeholder="Ex: Lote 123" class="w-full"
+        :id="`rawMaterial-value-${index}`" :name="`rawMaterials[${index}].value`"
           :class="{ 'p-invalid': !row.value && isMandatory(row.rawMaterialId) }"
           @update:modelValue="(val) => updateRow(index, 'value', val)" />
       </div>

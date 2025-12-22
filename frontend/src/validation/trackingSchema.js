@@ -139,9 +139,7 @@ export const trackingSchema = trackingBaseObject.refine(
 
 export const trackingPrensasFormSchema = trackingBaseObject
   .omit({
-    rawMaterials: true, // AQUÍ ELIMINAMOS EL CAMPO Y SU VALIDACIÓN
-    trackingSourceId: true,
-    // parameters: true // También quitar parámetros si no los usa
+    trackingSourceId: true, // AQUÍ ELIMINAMOS SU VALIDACIÓN
   })
   .refine(dateValidation, dateValidationOptions);
 

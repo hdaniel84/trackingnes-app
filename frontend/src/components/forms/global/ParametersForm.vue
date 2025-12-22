@@ -28,9 +28,9 @@ const getParameterType = (parameterId) => {
 // 4. Lógica para agregar fila (inicializamos todos los campos del DTO)
 const addRow = () => {
   const current = props.modelValue || [];
-  const newRow = { 
+  const newRow = {
     id: null,
-    parameterId: null, 
+    parameterId: null,
     // Campos específicos del DTO:
     valueString: '',
     valueNumber: null,
@@ -53,7 +53,7 @@ const updateRow = (index, field, value) => {
   const updated = current.map((item, i) => {
     if (i === index) {
       const newItem = { ...item, [field]: value };
-      
+
       // Si cambiamos el parámetro, limpiamos los valores anteriores para evitar basura
       if (field === 'parameterId') {
         newItem.valueString = '';
@@ -77,79 +77,44 @@ const updateRow = (index, field, value) => {
       <div class="w-10"></div>
     </div>
 
-    <div 
-      v-for="(row, index) in (modelValue || [])" 
-      :key="index" 
-      class="flex gap-3 items-start"
-    >
-      <div class="min-w-40 max-w-40">
-        <ParameterSelect 
-          :modelValue="row.parameterId" 
-          :phaseId="props.phaseId" 
-          @update:modelValue="(val) => updateRow(index, 'parameterId', val)"
-          class="w-full" 
-        />
+    <div v-for="(row, index) in (modelValue || [])" :key="index" class="flex gap-3 items-start">
+      <div class="w-3/5 relative">
+        <ParameterSelect :modelValue="row.parameterId" :phaseId="props.phaseId"
+          @update:modelValue="(val) => updateRow(index, 'parameterId', val)" class="w-full" />
       </div>
 
       <div class="flex-1">
-        
+
         <template v-if="getParameterType(row.parameterId) === 'NUMBER'">
-          <InputNumber 
-            :modelValue="row.valueNumber" 
-            placeholder="0.00" 
-            :minFractionDigits="0" 
-            :maxFractionDigits="4"
-            mode="decimal"
-            fluid
-            class="w-full"
-            @update:modelValue="(val) => updateRow(index, 'valueNumber', val)" 
-          />
+          <InputNumber :modelValue="row.valueNumber" placeholder="0.00" :minFractionDigits="0" :maxFractionDigits="4"
+            mode="decimal" fluid class="w-full" @update:modelValue="(val) => updateRow(index, 'valueNumber', val)" />
         </template>
 
         <template v-else-if="getParameterType(row.parameterId) === 'BOOL'">
-           <div class="flex items-center h-full pt-2 pl-1 gap-2">
-             <Checkbox 
-                :modelValue="row.valueBool" 
-                binary 
-                inputId="chk-{{index}}"
-                @update:modelValue="(val) => updateRow(index, 'valueBool', val)" 
-             />
-             <label :for="'chk-'+index" class="cursor-pointer text-sm select-none">
-               {{ row.valueBool ? 'Sim / Ativo' : 'Não / Inativo' }}
-             </label>
-           </div>
+          <div class="flex items-center h-full pt-2 pl-1 gap-2">
+            <Checkbox :modelValue="row.valueBool" binary inputId="chk-{{index}}"
+              @update:modelValue="(val) => updateRow(index, 'valueBool', val)" />
+            <label :for="'chk-' + index" class="cursor-pointer text-sm select-none">
+              {{ row.valueBool ? 'Sim / Ativo' : 'Não / Inativo' }}
+            </label>
+          </div>
         </template>
 
         <template v-else-if="getParameterType(row.parameterId) === 'DATE'">
-          <DatePicker 
-            :modelValue="row.valueDate" 
-            showIcon 
-            fluid 
-            dateFormat="dd/mm/yy"
-            placeholder="Selecionar data"
-            class="w-full"
-            @update:modelValue="(val) => updateRow(index, 'valueDate', val)" 
-          />
+          <DatePicker :modelValue="row.valueDate" showIcon fluid dateFormat="dd/mm/yy" placeholder="Selecionar data"
+            class="w-full" @update:modelValue="(val) => updateRow(index, 'valueDate', val)" />
         </template>
 
         <template v-else>
-          <InputText 
-            :modelValue="row.valueString" 
-            placeholder="Texto..." 
-            class="w-full" 
-            @update:modelValue="(val) => updateRow(index, 'valueString', val)" 
-          />
+          <InputText :modelValue="row.valueString" placeholder="Texto..." class="w-full"
+            @update:modelValue="(val) => updateRow(index, 'valueString', val)" />
         </template>
 
       </div>
 
-      <Button 
-        icon="pi pi-trash" 
-        severity="danger" 
-        variant="text" 
-        rounded
-        @click="removeRow(index)" 
-      />
+      <div class="w-10 flex justify-center">
+        <Button icon="pi pi-trash" severity="danger" variant="text" rounded @click="removeRow(index)" />
+      </div>
     </div>
 
     <div v-if="(!modelValue || modelValue.length === 0)" class="text-surface-500 text-sm italic mb-2">
@@ -157,14 +122,8 @@ const updateRow = (index, field, value) => {
     </div>
 
     <div>
-      <Button 
-        label="Adicionar Parâmetro" 
-        icon="pi pi-plus" 
-        severity="secondary" 
-        outlined 
-        size="small"
-        @click="addRow" 
-      />
+      <Button label="Adicionar Parâmetro" icon="pi pi-plus" severity="secondary" outlined size="small"
+        @click="addRow" />
     </div>
   </div>
 </template>
