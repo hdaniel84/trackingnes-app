@@ -89,6 +89,15 @@ const router = createRouter({
                 permission: 'ESCOLHA' //Cada formulario maneja internamente el WRITE_ o READ_
             }
         },
+        {
+            path: '/trace',
+            name: 'trace',
+            component: () => import('@/views/pages/tracking/TrackingTraceMain.vue'),
+            meta: {
+                requiresAuth: true,
+                phaseId: 9,
+            }
+        },
 
 
         // ... otras rutas protegidas ...

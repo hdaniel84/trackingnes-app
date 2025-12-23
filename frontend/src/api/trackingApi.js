@@ -16,7 +16,9 @@ const TrackingService = {
   // phaseIds: Array [1, 3]
   // shapeId: String "001" (Opcional)
 
-  getCandidates: (params) => http.get('/tracking/candidates', { params })
+  getCandidates: (params) => http.get('/tracking/candidates', { params }),
+
+  getTraceability: (id) => http.get(`/tracking/${id}/traceability`)
 
 };
 

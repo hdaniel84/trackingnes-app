@@ -1,7 +1,9 @@
 package com.mesacer.trackingnes.trackingnes_app.controller;
 
+import com.mesacer.trackingnes.trackingnes_app.dto.TraceabilityNodeDTO;
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingRequestDTO;
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingResponseDTO;
+import com.mesacer.trackingnes.trackingnes_app.service.TraceabilityService;
 import com.mesacer.trackingnes.trackingnes_app.service.TrackingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import java.util.List;
 public class TrackingController {
 
     private final TrackingService service;
+    private final TraceabilityService traceabilityService;
 
     @GetMapping
     public ResponseEntity<List<TrackingResponseDTO>> getAll(
@@ -49,6 +52,21 @@ public class TrackingController {
             @RequestParam(defaultValue = "SHAPE") String filterType) {
 
         return ResponseEntity.ok(service.findCandidates(phaseIds, referenceId, filterType));
+    }
+
+    /**
+     * Endpoint para obtener el árbol genealógico.
+     * GET /api/tracking/{id}/traceability
+     */
+    @GetMapping("/{id}/traceability")
+    public ResponseEntity<TraceabilityNodeDTO> getTraceabilityTree(@PathVariable Long id) {
+        TraceabilityNodeDTO tree = traceabilityService.getAncestryTree(id);
+
+        if (tree == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(tree);
     }
 
     @PostMapping

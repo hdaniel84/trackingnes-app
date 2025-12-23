@@ -52,7 +52,8 @@ const model = computed(() => {
                     icon: 'pi pi-fw pi-cog',
                     items: [
                         { label: 'Utilizadores', icon: 'pi pi-fw pi-users', to: '/admin/users' },
-                        { label: 'Permissões', icon: 'pi pi-fw pi-lock', to: '/admin/permissions' }
+                        { label: 'Permissões', icon: 'pi pi-fw pi-lock', to: '/admin/permissions' },
+                        { label: 'Trace', icon: 'pi pi-fw pi-lock', to: '/trace' }
                     ]
                 }
             ]

@@ -3,9 +3,7 @@ import { ref, watch, computed } from 'vue';
 import { useTrackingStore } from '@/stores/trackingStore';
 import { useFormatters } from '@/layout/composables/useFormatters';
 import { usePhase } from '@/layout/composables/usePhase';
-
-// Si tienes un store de Auth, impórtalo para validar en JS
-// import { useAuthStore } from '@/stores/authStore'; 
+import TrackingTrace from './TrackingTrace.vue'
 
 // PrimeVue & UI
 import ProgressSpinner from 'primevue/progressspinner';
