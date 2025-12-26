@@ -8,7 +8,8 @@ import Tag from 'primevue/tag';
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },
-  phaseId: { type: Number, required: true }
+  phaseId: { type: Number, required: true },
+  showValidation: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -84,11 +85,11 @@ const updateRow = (index, field, value) => {
       <div class="flex-1">
         <InputText :modelValue="row.value" placeholder="Ex: Lote 123" class="w-full"
         :id="`rawMaterial-value-${index}`" :name="`rawMaterials[${index}].value`"
-          :class="{ 'p-invalid': !row.value && isMandatory(row.rawMaterialId) }"
+          :class="{ 'p-invalid': showValidation && !row.value && isMandatory(row.rawMaterialId) }"
           @update:modelValue="(val) => updateRow(index, 'value', val)" />
       </div>
 
-      <div class="w-10 flex justify-center">
+      <div class="w-10 flex justify-center" v-if="!isMandatory(row.rawMaterialId)">
         <Button icon="pi pi-trash" severity="danger" variant="text" rounded :disabled="isMandatory(row.rawMaterialId)"
           @click="removeRow(index)"
           v-tooltip.left="isMandatory(row.rawMaterialId) ? 'Item obrigatório não pode ser removido' : 'Remover'" />

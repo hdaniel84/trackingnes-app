@@ -7,7 +7,8 @@ import Select from 'primevue/select';
 
 const props = defineProps({
   modelValue: { type: Object, default: null },
-  filterSection: { type: Number, default: null }
+  filterSection: { type: Number, default: null },
+  label: { type: String, default: 'Equipa:' }
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -58,8 +59,8 @@ onMounted(async () => {
     </div>
 
     <div v-else>
-      <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">
-        Equipa
+      <label v-if="label" class="block text-xs font-medium text-surface-500 mb-1 ml-1">
+        {{ label }}
       </label>
 
       <Select id="teamSelect" v-model="selectedTeam" :options="filteredTeams" optionLabel="description" dataKey="id"

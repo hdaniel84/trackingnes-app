@@ -10,26 +10,33 @@ const props = defineProps({
     type: [Number, String, null],
     default: null
   },
-  phaseId: { type: Number, default: null }
+  phaseId: { type: Number, default: null },
+  disabled: { type: Boolean, default: false },
+  excludedIds: { type: Array, default: () => [] }
 });
 
 const emit = defineEmits(['update:modelValue']);
 const store = useParameterStore();
 
-// 🔹 Binding reactivo usando computed
+// Binding reactivo usando computed
 const selectedValue = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
 });
 
-// 🔹 Lógica de Filtrado por Fase
+// Lógica de Filtrado por Fase
 const filteredItems = computed(() => {
   const items = store.items;
-  // Si no nos pasan phaseId, mostramos todos (o ninguno, según prefieras)
-  if (!props.phaseId) return items;
 
-  // Filtramos comparando el ID de la fase anidada
-  return items.filter(item => item.phase?.id === props.phaseId);
+  return items.filter(item => {
+    // 1. Filtro de Fase
+    const matchPhase = !props.phaseId || item.phase?.id === props.phaseId;
+
+    // 2. Filtro de Exclusión
+    const isExcluded = props.excludedIds.includes(item.id);
+
+    return matchPhase && !isExcluded;
+  });
 });
 
 onMounted(async () => {
@@ -51,7 +58,7 @@ onMounted(async () => {
 
     <div v-else>
       <Select v-model="selectedValue" :options="filteredItems" optionLabel="description" optionValue="id"
-        placeholder="Tipo" filter showClear fluid class="w-full" />
+        placeholder="Tipo" filter showClear fluid class="w-full" :disabled="disabled" />
     </div>
   </div>
 </template>

@@ -3,17 +3,18 @@ import TrackingService from '@/api/trackingApi';
 
 export const useTrackingStore = defineStore('tracking', {
   state: () => ({
-    items: [],        // La lista de la página actual
+    items: [],        // La lista principal (Tabla)
     current: null,    // Registro en edición/detalle
     loading: false,
 
-    // Paginación
-    totalItems: 0,    // Total en base de datos
-    totalPages: 0,    // Total de páginas
-    page: 0,          // Página actual
-    size: 10,         // Tamaño de página
+    // Paginación (Estado del servidor)
+    totalItems: 0,    
+    totalPages: 0,    
+    page: 0,          
+    size: 10,         
 
-    activePhaseId: null, // Filtro activo
+    // Filtros activos (Opcional, pero útil para persistencia básica)
+    lastParams: {}, 
 
     // Errores
     error: null,
@@ -21,62 +22,77 @@ export const useTrackingStore = defineStore('tracking', {
   }),
 
   actions: {
-    async fetchAll({ page = 0, size = 10, sort = 'startTime,desc', phaseId = null } = {}) {
+    /**
+     * Carga datos con filtros dinámicos.
+     * Acepta cualquier objeto de parámetros que coincida con el Backend (TrackingListDTO/Specification).
+     */
+    async fetchAll(params = {}) {
       this.loading = true;
       this.fetchError = null;
 
-      this.page = page;
-      this.size = size;
-
-      // Actualizamos la fase activa si nos pasan una
-      if (phaseId !== null && phaseId !== undefined) {
-        this.activePhaseId = phaseId;
-      }
+      // 1. Guardamos parámetros básicos en el estado por si se necesitan leer
+      if (params.page !== undefined) this.page = params.page;
+      if (params.size !== undefined) this.size = params.size;
+      
+      // Guardamos la última consulta completa (útil para "refrescar" sin pasar params de nuevo)
+      this.lastParams = { ...params };
 
       try {
-        const params = { page, size, sort };
+        // 2. Limpieza de Parámetros:
+        // Eliminamos claves con valor null, undefined o string vacío para no ensuciar la URL
+        const cleanParams = Object.fromEntries(
+          Object.entries(params).filter(([_, v]) => v != null && v !== '')
+        );
 
-        // Usamos la fase guardada en el estado
-        if (this.activePhaseId) {
-          params.phaseId = this.activePhaseId;
-        }
+        // 3. Llamada al Servicio
+        const response = await TrackingService.getAll(cleanParams);
 
-        const response = await TrackingService.getAll(params);
+        this.items = response.data.content || response.data; // Soporte para Page<T> o List<T>
 
-        this.items = response.data;
-
-        // Headers de paginación
+        // 4. Mapeo de Headers de Paginación (Spring Boot suele devolver esto en headers o en el body 'page')
+        // Ajusta esto según si tu backend devuelve Page<?> en el body o headers X-Total-Count
         const totalCount = response.headers['x-total-count'];
         const totalPages = response.headers['x-total-pages'];
 
-        this.totalItems = totalCount ? parseInt(totalCount) : 0;
-        this.totalPages = totalPages ? parseInt(totalPages) : 0;
+        // Si el backend devuelve objeto Page de Spring en el body:
+        if (response.data.totalElements !== undefined) {
+             this.totalItems = response.data.totalElements;
+             this.totalPages = response.data.totalPages;
+        } else {
+             // Fallback a headers
+             this.totalItems = totalCount ? parseInt(totalCount) : 0;
+             this.totalPages = totalPages ? parseInt(totalPages) : 0;
+        }
 
       } catch (err) {
         console.error("Error fetching tracking:", err);
         this.fetchError = 'Não foi possível carregar os registos.';
         this.items = [];
+        this.totalItems = 0;
       } finally {
         this.loading = false;
       }
     },
 
+    /**
+     * Obtiene candidatos para dropdowns (Padres, Materias Primas, etc).
+     * ⚠️ IMPORTANTE: No guarda en 'this.items' para no romper la tabla principal.
+     * Retorna la data para que el componente la maneje localmente.
+     */
     async getCandidates({ phaseIds, referenceId = null, filterType = 'SHAPE' } = {}) {
       const params = {};
 
-      if (phaseIds && Array.isArray(phaseIds)) {
-        params.phaseIds = phaseIds.join(',');
-      } else {
-        params.phaseIds = phaseIds;
+      if (phaseIds) {
+        params.phaseIds = Array.isArray(phaseIds) ? phaseIds.join(',') : phaseIds;
       }
 
       if (referenceId) {
-        params.referenceId = referenceId; // Axios lo enviará como string. Perfecto.
+        params.referenceId = referenceId;
         params.filterType = filterType;
       }
-      //return http.get('/tracking/candidates', { params });
-      const response = await TrackingService.getCandidates(params);
-      this.items = response.data;
+
+      // Devolvemos la promesa/datos directamente. NO modificamos el estado global 'items'.
+      return await TrackingService.getCandidates(params);
     },
 
     async fetchById(id) {
@@ -85,8 +101,10 @@ export const useTrackingStore = defineStore('tracking', {
       try {
         const response = await TrackingService.getById(id);
         this.current = response.data;
+        return response.data; // Retornamos también por si el componente lo necesita
       } catch (err) {
         this.error = `Não foi possível carregar o registo ${id}`;
+        throw err;
       } finally {
         this.loading = false;
       }
@@ -97,9 +115,10 @@ export const useTrackingStore = defineStore('tracking', {
       this.error = null;
       try {
         const response = await TrackingService.create(data);
-
-        // Recargamos usando el estado actual (activePhaseId)
-        await this.fetchAll({ page: 0, size: this.size, sort: 'id,desc', phaseId: this.activePhaseId });
+        
+        // Recargar la tabla con los últimos filtros usados
+        // Esto mantiene al usuario en la misma página/filtro donde estaba
+        await this.fetchAll(this.lastParams);
 
         return response.data;
       } catch (err) {
@@ -117,10 +136,16 @@ export const useTrackingStore = defineStore('tracking', {
       try {
         const response = await TrackingService.update(id, data);
 
-        // Actualización Optimista
+        // Actualización Optimista en la lista local
         const index = this.items.findIndex(item => item.id === id);
         if (index !== -1) {
-          this.items[index] = response.data;
+          // Fusionamos para no perder datos que quizas no vengan en la respuesta
+          this.items[index] = { ...this.items[index], ...response.data };
+        }
+        
+        // Actualizamos el current si es el mismo
+        if (this.current && this.current.id === id) {
+            this.current = response.data;
         }
 
         return response.data;

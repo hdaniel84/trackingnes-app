@@ -6,11 +6,12 @@ import com.mesacer.trackingnes.trackingnes_app.dto.TrackingResponseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface TrackingService {
 
-    Page<TrackingResponseDTO> getAll(Long phaseId, Pageable pageable);
+    Page<TrackingResponseDTO> getAll(Pageable pageable, Long phaseId, Long productId, Long teamId, Long id, String logisticUnit, LocalDate date);
 
     List<TrackingResponseDTO> findCandidates(List<Long> phaseIds, String referenceId, String filterType);
 

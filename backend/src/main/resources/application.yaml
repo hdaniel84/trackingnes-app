@@ -1,24 +1,67 @@
 spring:
   application:
     name: trackingnes-app
-  # Configuración de la Base de Datos
+  profiles:
+    active: local
+
+  # 1. DATASOURCE & POOL (HikariCP)
   datasource:
-    url: jdbc:mysql://localhost:3306/mesabd_rastreabilidade_spring?serverTimezone=UTC&useSSL=true
-    username: trackingnes_user                             
-    password: mesacerPass.2025                        
+    # 🚀 SEGURIDAD: Usa variables de entorno, no hardcodees contraseñas
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/mesabd_rastreabilidade_spring?serverTimezone=UTC&useSSL=true&requireSSL=false&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
+    username: ${DB_USER:root}           
+    password: ${DB_PASSWORD:secret}     
     driverClassName: com.mysql.cj.jdbc.Driver
-  
-  # Configuración de JPA/Hibernate
+    
+    # Configuración del Pool (Rendimiento y Estabilidad)
+    hikari:
+      pool-name: TrackingNesHikariCP
+      minimum-idle: 5                # Conexiones mínimas siempre listas
+      maximum-pool-size: 20          # Máximo de conexiones simultáneas (ajustar según RAM de BD)
+      idle-timeout: 300000           # 5 min (tiempo para cerrar conexión inactiva)
+      max-lifetime: 1800000          # 30 min (tiempo máximo de vida de una conexión)
+      connection-timeout: 20000      # 20 seg (tiempo máximo espera para obtener conexión)
+      validation-timeout: 5000       # 5 seg para validar conexión
+      test-on-borrow: false          # Hikari lo maneja mejor internamente, dejar en false por performance
+
+  # 2. JPA & HIBERNATE
   jpa:
+    # 🛑 CRÍTICO ENTERPRISE: Cierra la sesión tras el Service. 
+    # Evita el antipatrón "LazyInitializationException" en la vista y queries n+1 ocultas.
+    open-in-view: false              
+    
+    # En Producción: 'validate' o 'none'. NUNCA 'update'.
     hibernate:
-      ddl-auto: validate  
-    show-sql: true     
-    properties:               
-      hibernate:             
-        '[hibernate.format_sql]': true  
+      ddl-auto: validate             
+    
+    show-sql: false                  # False en producción (seguridad y logs limpios)
+    
+    properties:
+      hibernate:
+        # Dialecto Específico (Optimiza SQL para MySQL 8)
+        #dialect: org.hibernate.dialect.MySQL8Dialect
+        
+        # Formato (Solo útil en dev, false en prod para ahorrar CPU en logs)
+        format_sql: false            
+        
+        # 🚀 PERFORMANCE (Batching)
+        # Permite insertar/actualizar 50 trackings en 1 viaje a la BD en lugar de 50 viajes.
+        jdbc:
+          batch_size: 50
+          fetch_size: 50             # Trae 50 registros a la memoria de golpe en select grandes
+        order_inserts: true
+        order_updates: true
+        
+        # Generación de Estadísticas (útil para debug, apagar en prod)
+        generate_statistics: false
 
 server:
   port: 8080 
+  # Configuración segura de timeouts del servidor web
+  tomcat:
+    connection-timeout: 20000
+    max-threads: 200
+    min-spare-threads: 10
 
 jwt:
-  secret: N1DV4fjxISpoZUMg0EWdWvH8p5butUZmDZYmbFZZ1EVOYNmtrzBxc5oVUlPmpNia
+  # Usa una variable de entorno para el secret en producción
+  secret: ${JWT_SECRET:N1DV4fjxISpoZUMg0EWdWvH8p5butUZmDZYmbFZZ1EVOYNmtrzBxc5oVUlPmpNia}

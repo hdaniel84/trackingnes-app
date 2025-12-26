@@ -11,11 +11,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -28,10 +30,15 @@ public class TrackingController {
 
     @GetMapping
     public ResponseEntity<List<TrackingResponseDTO>> getAll(
+            @PageableDefault(size = 20, sort = "startTime", direction = Sort.Direction.DESC) Pageable pageable,
             @RequestParam(required = false) Long phaseId,
-            @PageableDefault(size = 20, sort = "startTime", direction = Sort.Direction.DESC) Pageable pageable) {
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) Long teamId,
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String logisticUnit,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         // Pasamos el phaseId al servicio
-        Page<TrackingResponseDTO> page = service.getAll(phaseId, pageable);
+        Page<TrackingResponseDTO> page = service.getAll(pageable, phaseId, productId, teamId, id, logisticUnit, date);
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("x-total-count", String.valueOf(page.getTotalElements()));
@@ -39,6 +46,30 @@ public class TrackingController {
 
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
+
+    /*
+     * @GetMapping
+     * public ResponseEntity<Page<TrackingListDTO>> getAll(
+     * 
+     * @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable
+     * pageable,
+     * 
+     * @RequestParam(required = false) Long phaseId,
+     * 
+     * @RequestParam(required = false) Long productId,
+     * 
+     * @RequestParam(required = false) Long teamId,
+     * 
+     * @RequestParam(required = false) Long id,
+     * 
+     * @RequestParam(required = false) String logisticUnit,
+     * 
+     * @RequestParam(required = false) @DateTimeFormat(iso =
+     * DateTimeFormat.ISO.DATE) LocalDate date) {
+     * return ResponseEntity.ok(service.getAll(pageable, phaseId, productId, teamId,
+     * id, logisticUnit, date));
+     * }
+     */
 
     @GetMapping("/{id}")
     public ResponseEntity<TrackingResponseDTO> getById(@PathVariable Long id) {

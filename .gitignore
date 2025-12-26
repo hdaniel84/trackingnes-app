@@ -35,6 +35,7 @@ out/
 *.env
 application*.properties
 application*.yml
+application-local.yml
 *.keystore
 *.jks
 

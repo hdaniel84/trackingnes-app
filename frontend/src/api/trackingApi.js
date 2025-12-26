@@ -12,10 +12,6 @@ const TrackingService = {
 
   remove: (id) => http.delete(`/tracking/${id}`),
 
-  // ACTUALIZADO: Para soportar la lógica de Vidragem/Escolha
-  // phaseIds: Array [1, 3]
-  // shapeId: String "001" (Opcional)
-
   getCandidates: (params) => http.get('/tracking/candidates', { params }),
 
   getTraceability: (id) => http.get(`/tracking/${id}/traceability`)

@@ -5,7 +5,9 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { ref, computed, watch } from 'vue';
 import { usePhase } from '@/layout/composables/usePhase';
 import TrackingService from '@/api/trackingApi';
+//Inyección de materias y parámetros mandatory
 import { useRawMaterialStore } from '@/stores/rawMaterialStore';
+import { useParameterStore } from '@/stores/parameterStore';
 
 // Helpers & UI
 import { useNotify } from '@/layout/composables/notify';
@@ -25,6 +27,7 @@ import ParametersForm from '@/components/forms/global/ParametersForm.vue';
 import RawMaterialsForm from '@/components/forms/global/RawMaterialsForm.vue';
 import AuxiliaryEquipmentsSelect from '@/components/forms/global/AuxiliaryEquipmentsSelect.vue';
 import TrackingSourceSelect from '@/components/forms/global/TrackingSourceSelect.vue';
+import TrackingSuccessDialog from '@/components/forms/tracking/TrackingSuccessDialog.vue';
 
 const props = defineProps({
   item: Object,
@@ -38,6 +41,9 @@ const emit = defineEmits(['success', 'cancel']);
 const { phaseId, currentRules, phaseMetadata } = usePhase();
 const store = useTrackingStore();
 const rawMaterialStore = useRawMaterialStore();
+const parameterStore = useParameterStore();
+const showSuccessDialog = ref(false);
+const createdTrackingId = ref(null);
 const { notifySuccess, notifyError } = useNotify();
 const { showErrorDialog } = useErrorDialog();
 const errorList = computed(() => {
@@ -60,7 +66,7 @@ const showRawMaterials = computed(() => {
 });
 
 // 3. VEE-VALIDATE SETUP
-const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta, values: formValues } = useForm({
+const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta, values: formValues, submitCount } = useForm({
   validationSchema: toTypedSchema(props.validationSchema),
   validateOnMount: false,
   initialValues: {
@@ -116,9 +122,66 @@ const injectMandatoryRawMaterials = async () => {
 
   // 5. Aplicar cambios al formulario
   if (hasChanges) {
-    setValues({
-      ...formValues,
-      rawMaterials: mergedRows
+    resetForm({
+      values: {
+        ...formValues,
+        rawMaterials: mergedRows
+      }
+    });
+  }
+};
+
+//Inyeccion de parametros:
+const injectMandatoryParameters = async () => {
+  // 1. Cargar catálogo si está vacío
+  if (parameterStore.items.length === 0) {
+    await parameterStore.fetchAll();
+  }
+
+  const currentPhaseId = Number(phaseId.value);
+
+  // 2. Filtrar obligatorios de la fase actual
+  const mandatoryItems = parameterStore.items.filter(p =>
+    p.mandatory === true &&
+    p.phase?.id === currentPhaseId
+  );
+
+  if (mandatoryItems.length === 0) return;
+
+  let currentRows = formValues.parameters || [];
+
+  // 3. Limpiar fila vacía por defecto (si existe y es la única)
+  const isDefaultEmptyRow = currentRows.length === 1 && !currentRows[0].parameterId;
+
+  let mergedRows = isDefaultEmptyRow ? [] : [...currentRows];
+  let hasChanges = isDefaultEmptyRow;
+
+  // 4. Fusionar
+  mandatoryItems.forEach(mandatory => {
+    // Verificamos si ya existe en el array
+    const exists = mergedRows.some(row => row.parameterId === mandatory.id);
+
+    if (!exists) {
+      // Agregamos con la estructura completa del DTO inicializada en null
+      mergedRows.push({
+        id: null,
+        parameterId: mandatory.id,
+        valueString: '',
+        valueNumber: null,
+        valueBool: null,
+        valueDate: null
+      });
+      hasChanges = true;
+    }
+  });
+
+  // 5. Aplicar cambios
+  if (hasChanges) {
+    resetForm({
+      values: {
+        ...formValues, // Mantenemos lo que el usuario ya haya escrito en otros campos
+        parameters: mergedRows
+      }
     });
   }
 };
@@ -207,14 +270,16 @@ watch(() => props.item, async (val) => {
     }
 
     await injectMandatoryRawMaterials();
+    await injectMandatoryParameters();
   }
 }, { immediate: true });
 
 // Caso A: Creación / Cambio de Fase
 watch(phaseId, async (newId) => {
   if (newId) {
-    // 🚀 Inyectar obligatorios después del reset
+    // Inyectar obligatorios después del reset
     await injectMandatoryRawMaterials();
+    await injectMandatoryParameters();
   }
 }, { immediate: true });
 
@@ -259,8 +324,11 @@ const onSubmit = handleSubmit(async (values) => {
     };
 
     if (props.mode === 'create') {
-      await store.create(payload);
-      notifySuccess('Registo criado com sucesso');
+      const newRecord = await store.create(payload);
+      //notifySuccess('Registo criado com sucesso');
+      // Guardamos ID y mostramos Dialog
+      createdTrackingId.value = newRecord.id;
+      showSuccessDialog.value = true;
 
       // Reset inteligente (conserva contexto)
       resetForm({
@@ -278,7 +346,7 @@ const onSubmit = handleSubmit(async (values) => {
           quantity: null,
           comments: null,
           endTime: null,
-          trackingSourceId: null // Limpia origen
+          trackingSourceId: values.trackingSourceId // Deja origen
         }
       });
       // Forzar mostrar select de nuevo en create loop
@@ -296,6 +364,12 @@ const onSubmit = handleSubmit(async (values) => {
     showErrorDialog(err);
   }
 });
+
+// Manejador para cerrar el diálogo
+const onDialogClose = () => {
+  // Emitir success al padre al cerrar el modal
+  // emit('success'); 
+};
 </script>
 
 <template>
@@ -429,7 +503,7 @@ const onSubmit = handleSubmit(async (values) => {
             <span class="text-xs text-red-500" v-if="errors.rawMaterials && meta.touched">* Obrigatório</span>
           </div>
 
-          <RawMaterialsForm v-model="rawMaterials" :phaseId="phaseId" />
+          <RawMaterialsForm v-model="rawMaterials" :phaseId="phaseId" :show-validation="submitCount > 0" />
 
           <small v-if="errors.rawMaterials && meta.touched" class="text-red-500 mt-2 block text-xs">
             {{ errors.rawMaterials }}
@@ -444,7 +518,7 @@ const onSubmit = handleSubmit(async (values) => {
               <i class="pi pi-sliders-h"></i> Parâmetros
             </span>
           </div>
-          <ParametersForm v-model="parameters" :phaseId="phaseId" />
+          <ParametersForm v-model="parameters" :phaseId="phaseId" :show-validation="submitCount > 0" />
           <small v-if="errors.parameters" class="text-red-500 mt-2 block text-xs">{{ errors.parameters }}</small>
         </div>
       </div>
@@ -458,7 +532,8 @@ const onSubmit = handleSubmit(async (values) => {
 
       <div>
         <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Observações / Comentários</label>
-        <Textarea id="comments" v-model="comments" rows="3" class="w-full" placeholder="Informação adicional relevante..." />
+        <Textarea id="comments" v-model="comments" rows="3" class="w-full"
+          placeholder="Informação adicional relevante..." />
       </div>
 
       <Divider />
@@ -482,6 +557,8 @@ const onSubmit = handleSubmit(async (values) => {
         </ul>
       </div>
       <Divider />
+      <TrackingSuccessDialog v-model:visible="showSuccessDialog" :trackingId="createdTrackingId"
+        @close="onDialogClose" />
     </form>
   </div>
 </template>

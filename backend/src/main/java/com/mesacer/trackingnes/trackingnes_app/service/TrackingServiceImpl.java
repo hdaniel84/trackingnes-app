@@ -5,18 +5,21 @@ import com.mesacer.trackingnes.trackingnes_app.dto.TrackingResponseDTO;
 import com.mesacer.trackingnes.trackingnes_app.mapper.TrackingMapper;
 import com.mesacer.trackingnes.trackingnes_app.model.Tracking;
 import com.mesacer.trackingnes.trackingnes_app.repository.TrackingRepository;
+import com.mesacer.trackingnes.trackingnes_app.repository.specs.TrackingSpecifications;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,18 +34,17 @@ public class TrackingServiceImpl implements TrackingService {
     private EntityManager entityManager;
 
     @Override
-    public Page<TrackingResponseDTO> getAll(Long phaseId, Pageable pageable) {
-        Page<Tracking> page;
+    public Page<TrackingResponseDTO> getAll(Pageable pageable, Long phaseId, Long productId, Long teamId, Long id,
+            String logisticUnit, LocalDate date) {
 
-        if (phaseId != null) {
-            // Si hay filtro, usamos el método específico
-            page = repository.findByPhaseId(phaseId, pageable);
-        } else {
-            // Si es null, traemos todo (comportamiento anterior)
-            page = repository.findAll(pageable);
-        }
+        Specification<Tracking> spec = TrackingSpecifications.withDynamicFilter(phaseId, productId, teamId, id,
+                logisticUnit, date);
 
-        return page.map(mapper::toResponseDTO);
+        Page<Tracking> pageResult = repository.findAll(spec, pageable);
+
+
+
+        return pageResult.map(mapper::toResponseDTO);
     }
 
     @Override
@@ -147,4 +149,5 @@ public class TrackingServiceImpl implements TrackingService {
                 .map(mapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
+
 }

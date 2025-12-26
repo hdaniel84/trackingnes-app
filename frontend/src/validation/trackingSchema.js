@@ -83,7 +83,11 @@ const trackingBaseObject = z.object({
   parameters: z
     .array(
       z.object({
-        parameterId: z.number({ required_error: 'Selecione um parâmetro', error: 'Selecione um parâmetro' }),
+        parameterId: z.number({
+          required_error: 'Selecione um parâmetro',
+          error: 'Selecione um parâmetro',
+          message: 'Selecione um parâmetro'
+        }),
         valueString: z.string().optional().nullable(),
         valueNumber: z.number().optional().nullable(),
         valueBool: z.boolean().optional().nullable(),

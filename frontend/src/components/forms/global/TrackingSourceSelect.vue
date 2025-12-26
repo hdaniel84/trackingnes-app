@@ -16,7 +16,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
-// 2. Estado LOCAL (Descomentamos lo que tenías, es la forma correcta)
 const items = ref([]); 
 const loading = ref(false);
 const error = ref(null);
@@ -96,10 +95,12 @@ watch(() => props.targetReferenceId, (newVal, oldVal) => {
             <template #option="slotProps">
                 <div class="flex flex-col">
                     <span class="font-bold text-sm">
-                        ID# {{ slotProps.option.id }} | 
-                        {{ slotProps.option.logisticUnit ? 'Carro: ' + slotProps.option.logisticUnit : 'S/ Carro' }}
+                         [{{ slotProps.option.id }}] 
+                        {{ slotProps.option.logisticUnit ? 'Unid. logística: ' + slotProps.option.logisticUnit : 'S/ Carro' }}
+                        
                     </span>
                     <span class="text-xs text-surface-500">
+                        {{ slotProps.option.product?.productCode }} |
                         {{ slotProps.option.product?.description || 'Produto Desconhecido'}} 
                         ({{ slotProps.option.phase?.description }})
                     </span>
@@ -108,7 +109,7 @@ watch(() => props.targetReferenceId, (newVal, oldVal) => {
 
             <template #value="slotProps">
                 <div v-if="slotProps.value" class="flex flex-col text-sm">
-                     <span class="font-bold">ID# {{ slotProps.value }}</span> 
+                     <span class="font-bold"> [{{ slotProps.value }}] </span> 
                      </div>
                 <span v-else>{{ slotProps.placeholder }}</span>
             </template>
