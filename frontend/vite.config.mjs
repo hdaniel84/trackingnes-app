@@ -18,6 +18,16 @@ export default defineConfig({
             resolvers: [PrimeVueResolver()]
         })
     ],
+    server: {
+        proxy: {
+            '/api': {
+                target: 'http://localhost:8080', // Apunta a tu Java local
+                changeOrigin: true,
+                secure: false,      
+            }
+        }
+    },
+    // ---------------------------
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))

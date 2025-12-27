@@ -71,7 +71,7 @@ public class WebSecurityConfig {
 
         // Define los orígenes permitidos. Cambiar '*' a la URL del frontend de Vue.js
         // en producción (ej: http://localhost:5173)
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:5173", "http://localhost:8081"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
 
         // Permite los métodos HTTP comunes para APIs REST
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));

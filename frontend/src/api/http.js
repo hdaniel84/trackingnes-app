@@ -2,7 +2,8 @@ import axios from 'axios';
 
 // Crear instancia de Axios
 const http = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  //baseURL: 'http://localhost:8080/api', //Va al archivo de conf de vite vite.config.mjs
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },

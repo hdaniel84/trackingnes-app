@@ -1,0 +1,63 @@
+services:
+  tracking-db:
+    image: mysql:8.0
+    container_name: tracking-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mesacerPass.2025
+      MYSQL_DATABASE: tracking_db
+    volumes:
+      - mysql_tracking_data:/var/lib/mysql
+    networks:
+      - tracking-net
+    ports:
+      - "3307:3306"
+
+  tracking-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      network: host
+    container_name: tracking-backend
+    restart: always
+    depends_on:
+      - tracking-db
+    environment:
+      SERVER_PORT: 8082
+      # AQUÍ LA CLAVE: Usamos el nombre del servicio 'tracking-db'
+      SPRING_DATASOURCE_URL: jdbc:mysql://tracking-db:3306/mesabd_rastreabilidade_spring?allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: mesacerPass.2025
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      # Desactiva cualquier inicialización por scripts SQL que Spring busque en los recursos
+      SPRING_SQL_INIT_MODE: never
+      # Asegura que Hibernate no intente adivinar el esquema
+      SPRING_JPA_GENERATE_DDL: "false"
+      SPRING_PROFILES_ACTIVE: prod
+    networks:
+      - tracking-net
+    ports:
+      - "8082:8082"
+
+  tracking-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      network: host
+    container_name: tracking-frontend
+    restart: always
+    depends_on:
+      - tracking-backend
+    volumes:
+      - ./nginx-conf/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "8081:80"
+    networks:
+      - tracking-net
+
+volumes:
+  mysql_tracking_data:
+
+networks:
+  tracking-net:
+    driver: bridge

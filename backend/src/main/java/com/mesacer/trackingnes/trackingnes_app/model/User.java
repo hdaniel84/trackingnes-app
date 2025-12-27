@@ -79,4 +79,10 @@ public class User implements UserDetails {
     @OneToOne
     @JoinColumn(name = "id_person", nullable = false)
     private Person person;
+
+    @Override
+    public boolean isEnabled() {
+        // Obligamos a que devuelva el valor de la variable de la BD
+        return this.enabled; 
+    }
 }
