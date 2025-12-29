@@ -35,10 +35,26 @@ const model = computed(() => {
                     visible: auth.hasPrivilege('READ_VIDRAGEM') || auth.hasPrivilege('WRITE_VIDRAGEM')
                 },
                 //{ label: 'KeraJet', icon: 'pi pi-fw pi-print', to: '/uikit/table' },
-                { label: 'Forno Entrada', icon: 'pi pi-fw pi-gauge', to: '/forno-entrada' },
-                { label: 'Forno Saída', icon: 'pi pi-fw pi-external-link', to: '/forno-saida' },
-                { label: 'Escolha', icon: 'pi pi-fw pi-eye', to: '/escolha' },
-                { label: 'Embalagem', icon: 'pi pi-fw pi-box', to: '/embalagem' },
+                {
+                    label: 'Forno Entrada', icon: 'pi pi-fw pi-gauge', to: '/forno-entrada',
+                    class: 'rotated-icon',
+                    visible: auth.hasPrivilege('READ_FORNO_ENTRADA') || auth.hasPrivilege('WRITE_FORNO_ENTRADA')
+                },
+                {
+                    label: 'Forno Saída', icon: 'pi pi-fw pi-external-link', to: '/forno-saida',
+                    class: 'rotated-icon',
+                    visible: auth.hasPrivilege('READ_FORNO_SAIDA') || auth.hasPrivilege('WRITE_FORNO_SAIDA')
+                },
+                {
+                    label: 'Escolha', icon: 'pi pi-fw pi-eye', to: '/escolha',
+                    class: 'rotated-icon',
+                    visible: auth.hasPrivilege('READ_ESCOLHA') || auth.hasPrivilege('WRITE_ESCOLHA')
+                },
+                {
+                    label: 'Embalagem', icon: 'pi pi-fw pi-box', to: '/embalagem',
+                    class: 'rotated-icon',
+                    visible: auth.hasPrivilege('READ_EMBALAGEM') || auth.hasPrivilege('WRITE_EMBALAGEM')
+                },
             ]
         },
         {

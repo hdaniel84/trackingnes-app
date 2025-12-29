@@ -17,9 +17,41 @@ const selectedShift = computed({
   set: (val) => emit('update:modelValue', val)
 });
 
+// Función para determinar el turno actual
+const findCurrentShift = (shifts) => {
+  const now = new Date();
+  const currentHour = now.getHours(); // 0 a 23
+
+  return shifts.find(shift => {
+    // Convertimos "08:00:00" a entero 8
+    const startHour = parseInt(shift.startTime.split(':')[0], 10);
+    let endHour = parseInt(shift.endTime.split(':')[0], 10);
+
+    // CASO ESPECIAL: Si termina a las 00:00:00, lo tratamos como las 24:00
+    // para que la comparación (hora < fin) funcione correctamente.
+    if (endHour === 0) {
+      endHour = 24;
+    }
+
+    // Lógica simple: si la hora actual está entre inicio y fin
+    // Ejemplo Turno 3: 16 <= 20 < 24 (True)
+    return currentHour >= startHour && currentHour < endHour;
+  });
+};
+
 onMounted(async () => {
+  // 1. Cargar datos si no existen
   if (store.items.length === 0) {
     await store.fetchShifts();
+  }
+
+  // 2. Si no hay un turno seleccionado previamente (modelValue es null), autoseleccionar
+  if (!props.modelValue && store.items.length > 0) {
+    const currentShift = findCurrentShift(store.items);
+    
+    if (currentShift) {
+      selectedShift.value = currentShift; // Esto dispara el emit update:modelValue
+    }
   }
 });
 </script>
