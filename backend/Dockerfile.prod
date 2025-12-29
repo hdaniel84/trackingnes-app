@@ -1,0 +1,16 @@
+# Dockerfile.prod
+# Usamos Java 21 (igual que tu proyecto)
+FROM eclipse-temurin:21-jdk-alpine
+
+WORKDIR /app
+
+# Creamos el usuario de seguridad (igual que tu original)
+RUN addgroup -S spring && adduser -S spring -G spring
+
+# Aquí está la magia: Copiamos el JAR que GitHub Actions ya compiló
+# Asumimos que el JAR estará en la carpeta target/ relativa al contexto
+COPY target/*.jar app.jar
+
+USER spring:spring
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

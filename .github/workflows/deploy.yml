@@ -1,0 +1,97 @@
+name: Deploy TrackingNes App
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Bajar código
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Configurar Java 21
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # 3. Compilar Backend (Genera el .jar en backend/target/)
+      - name: Build Backend
+        run: mvn clean package -DskipTests
+        working-directory: ./backend
+
+      # 4. Configurar Node 20 y Compilar Frontend
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Build Frontend
+        run: |
+          npm install
+          npm run build
+        working-directory: ./frontend
+
+      # 5. ENVIAR ARCHIVOS AL SERVIDOR (SCP)
+      - name: Copy files to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          # Copiamos: JAR, Frontend Dist, Docker Compose y el Dockerfile.prod
+          source: "backend/target/*.jar,frontend/dist/**,docker-compose.yml,backend/Dockerfile.prod"
+          target: "/opt/trackingnes_temp" # Carpeta temporal
+          strip_components: 0
+
+      # 6. DESPLIEGUE FINAL (SSH)
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            BASE_DIR="/opt/trackingnes"
+            TEMP_DIR="/opt/trackingnes_temp"
+
+            echo "🚀 Iniciando despliegue..."
+
+            # --- BACKEND ---
+            # Borrar JAR viejo y mover el nuevo
+            rm -f $BASE_DIR/backend/target/*.jar
+            mkdir -p $BASE_DIR/backend/target
+            mv $TEMP_DIR/backend/target/*.jar $BASE_DIR/backend/target/
+            
+            # Mover el Dockerfile.prod nuevo
+            mv $TEMP_DIR/backend/Dockerfile.prod $BASE_DIR/backend/Dockerfile.prod
+
+            # --- FRONTEND ---
+            # Limpiar contenido de dist y mover lo nuevo
+            rm -rf $BASE_DIR/frontend/dist/*
+            mkdir -p $BASE_DIR/frontend/dist
+            mv $TEMP_DIR/frontend/dist/* $BASE_DIR/frontend/dist/
+
+            # --- CONFIGURACIÓN ---
+            mv $TEMP_DIR/docker-compose.yml $BASE_DIR/docker-compose.yml
+            
+            # Limpieza temporal
+            rm -rf $TEMP_DIR
+
+            # Permisos críticos (para evitar el error 403)
+            sudo chmod -R 755 $BASE_DIR/frontend/dist
+
+            # --- REINICIO DOCKER ---
+            cd $BASE_DIR
+            echo "🔄 Reconstruyendo contenedores..."
+            # --build fuerza a leer el Dockerfile.prod y usar el nuevo JAR
+            docker compose up -d --build --remove-orphans tracking-backend tracking-frontend
+
+            echo "✅ Despliegue completado."
