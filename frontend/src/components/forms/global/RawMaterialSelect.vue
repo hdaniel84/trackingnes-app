@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted, computed } from 'vue';
 import { useRawMaterialStore } from '@/stores/rawMaterialStore';
-import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
 import Select from 'primevue/select';
 
@@ -50,7 +49,7 @@ onMounted(async () => {
 <template>
   <div class="w-full">
     <div v-if="store.loading && store.items.length === 0" class="flex items-center justify-center py-2">
-      <ProgressSpinner style="width: 25px; height: 25px" strokeWidth="6" />
+      <Skeleton width="100%" height="3rem" borderRadius="6px"></Skeleton>
     </div>
 
     <div v-else-if="store.error">

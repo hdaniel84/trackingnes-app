@@ -4,65 +4,118 @@ import { useAuthStore } from '@/stores/auth';
 import Chart from 'primevue/chart';
 import Timeline from 'primevue/timeline';
 import Button from 'primevue/button';
-import Tag from 'primevue/tag';
-import ProgressBar from 'primevue/progressbar';
-import Menu from 'primevue/menu';
+import Avatar from 'primevue/avatar';
+import Skeleton from 'primevue/skeleton';
 
-// 1. Datos del Usuario
+// --- 1. Estado y Datos ---
+const loading = ref(true);
 const authStore = useAuthStore();
-const userName = computed(() => authStore.user?.username || 'Utilizador');
+const userName = computed(() => authStore.user?.username || 'Utilizador'); 
+const timeRange = ref('today');
 
-// 2. Lógica de Fecha
-const currentDate = ref(new Date());
-const formattedDate = computed(() => {
-    return new Intl.DateTimeFormat('pt-PT', { 
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-    }).format(currentDate.value);
-});
-// Hora actual simple
-const currentTime = computed(() => {
-    return currentDate.value.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-});
-
-// 3. KPIs con "Tendencias" (Simulado para efecto visual)
+// Datos simulados (KPIs)
 const stats = ref([
-    { title: 'Produção Total', value: '12,450', unit: 'un', trend: '+12%', trendUp: true, subtext: 'vs. ontem' },
-    { title: 'OEE Global', value: '87.4', unit: '%', trend: '+2.1%', trendUp: true, subtext: 'vs. meta' },
-    { title: 'Rejeições', value: '1.2', unit: '%', trend: '-0.4%', trendUp: false, subtext: 'dentro do limite', negativeIsGood: true }, // negativeIsGood para pintar verde si baja
-    { title: 'Tempo Paragem', value: '45', unit: 'min', trend: '+15m', trendUp: true, subtext: 'acima da média', negativeIsGood: false },
+    { 
+        title: 'Output Real', 
+        value: '12,450', 
+        unit: 'un', 
+        trend: '+12.5%', 
+        trendUp: true, 
+        icon: 'pi pi-box', 
+        // Clases directas para colores
+        bgClass: 'bg-indigo-50 dark:bg-indigo-500/10',
+        textClass: 'text-indigo-600 dark:text-indigo-300'
+    },
+    { 
+        title: 'Eficiência (OEE)', 
+        value: '87.4', 
+        unit: '%', 
+        trend: '+2.1%', 
+        trendUp: true, 
+        icon: 'pi pi-bolt', 
+        bgClass: 'bg-emerald-50 dark:bg-emerald-500/10',
+        textClass: 'text-emerald-600 dark:text-emerald-300'
+    },
+    { 
+        title: 'Taxa Rejeição', 
+        value: '1.2', 
+        unit: '%', 
+        trend: '-0.4%', 
+        trendUp: true, 
+        negativeIsGood: true,
+        icon: 'pi pi-exclamation-triangle', 
+        bgClass: 'bg-amber-50 dark:bg-amber-500/10',
+        textClass: 'text-amber-600 dark:text-amber-300'
+    },
+    { 
+        title: 'Tempo Paragem', 
+        value: '0:45', 
+        unit: 'h', 
+        trend: '+15m', 
+        trendUp: false, 
+        icon: 'pi pi-clock', 
+        bgClass: 'bg-rose-50 dark:bg-rose-500/10',
+        textClass: 'text-rose-600 dark:text-rose-300'
+    },
 ]);
 
-// 4. Configuración del Gráfico (Chart.js con Gradiente)
+// Datos Timeline
+const activities = ref([
+    { status: 'Início Lote #4020', time: '14:30', icon: 'pi pi-play', color: '#10b981', desc: 'Produção iniciada na Prensa 04' },
+    { status: 'Alerta Temperatura', time: '14:15', icon: 'pi pi-exclamation-circle', color: '#ef4444', desc: 'Forno B excedeu limite (980°C)' },
+    { status: 'Mudança Turno', time: '14:00', icon: 'pi pi-users', color: '#3b82f6', desc: 'Equipa Tarde assumiu posto' },
+    { status: 'Manutenção OK', time: '11:00', icon: 'pi pi-check', color: '#64748b', desc: 'Preventiva Prensa 01 finalizada' },
+]);
+
+// Datos Máquinas
+const machines = ref([
+    { name: 'Prensa 01', status: 98, state: 'active' },
+    { name: 'Prensa 02', status: 85, state: 'active' },
+    { name: 'Prensa 03', status: 0, state: 'stopped' },
+    { name: 'Forno A', status: 100, state: 'active' },
+    { name: 'Forno B', status: 45, state: 'warning' },
+]);
+
+// --- 2. Configuración Gráfico ---
 const chartData = ref();
 const chartOptions = ref();
 
 const initChart = () => {
     const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--text-color');
-    const surfaceBorder = documentStyle.getPropertyValue('--surface-border'); // Color sutil para bordes
+    const surfaceBorder = documentStyle.getPropertyValue('--surface-border');
     
-    // Crear gradiente para el gráfico
+    // Crear canvas temporal para gradiente
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)'); // Indigo
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.35)'); 
     gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
 
     chartData.value = {
-        labels: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00'],
+        labels: ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
         datasets: [
             {
-                label: 'Output Real',
-                data: [65, 59, 80, 81, 56, 55, 90],
+                label: 'Output Atual',
+                data: [450, 590, 800, 810, 560, 950, 1200],
                 fill: true,
                 backgroundColor: gradient,
-                borderColor: '#6366f1', // Indigo 500
+                borderColor: '#6366f1',
+                borderWidth: 2,
                 pointBackgroundColor: '#ffffff',
                 pointBorderColor: '#6366f1',
                 pointBorderWidth: 2,
                 pointRadius: 4,
-                pointHoverRadius: 6,
                 tension: 0.4
+            },
+            {
+                label: 'Meta',
+                data: [700, 700, 700, 700, 700, 700, 700],
+                fill: false,
+                borderColor: '#94a3b8',
+                borderDash: [5, 5],
+                borderWidth: 1,
+                pointRadius: 0,
+                tension: 0
             }
         ]
     };
@@ -70,137 +123,162 @@ const initChart = () => {
     chartOptions.value = {
         maintainAspectRatio: false,
         plugins: {
-            legend: { display: false }, // Ocultamos leyenda para look minimalista
+            legend: { display: false },
             tooltip: {
-                mode: 'index',
-                intersect: false,
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                titleColor: '#1e293b',
-                bodyColor: '#475569',
-                borderColor: '#e2e8f0',
-                borderWidth: 1,
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                titleColor: '#fff',
+                bodyColor: '#cbd5e1',
+                padding: 10,
+                cornerRadius: 8,
+                displayColors: false,
             }
         },
         scales: {
             x: { 
-                ticks: { color: textColor, font: { size: 11 } }, 
-                grid: { display: false } // Sin grid vertical
+                ticks: { color: '#64748b', font: { size: 11 } }, 
+                grid: { display: false } 
             },
             y: { 
-                ticks: { color: textColor, font: { size: 11 } }, 
-                grid: { color: surfaceBorder,  borderDash: [5, 5] }, // Grid horizontal sutil
+                ticks: { color: '#64748b', font: { size: 11 } }, 
+                grid: { color: surfaceBorder, borderDash: [4, 4] },
                 beginAtZero: true
             }
         },
-        interaction: {
-            mode: 'nearest',
-            axis: 'x',
-            intersect: false
-        }
+        interaction: { mode: 'index', intersect: false }
     };
 };
 
-// 5. Timeline compacta
-const activities = ref([
-    { status: 'Lote #4020', date: '14:30', icon: 'pi pi-check-circle', color: '#10b981', description: 'Iniciado em Prensa 04' },
-    { status: 'Alerta Crítico', date: '14:15', icon: 'pi pi-exclamation-circle', color: '#ef4444', description: 'Temperatura elevada Forno B' },
-    { status: 'Manutenção', date: '11:00', icon: 'pi pi-wrench', color: '#f59e0b', description: 'Preventiva Prensa 01 concluída' },
-]);
-
-// 6. Estado de las Máquinas (Visual extra)
-const machines = ref([
-    { name: 'Prensa 01', status: 85, state: 'active' },
-    { name: 'Prensa 02', status: 92, state: 'active' },
-    { name: 'Prensa 03', status: 0, state: 'stopped' },
-    { name: 'Prensa 04', status: 45, state: 'warning' },
-]);
-
-const getSeverity = (state) => {
-    if (state === 'active') return 'bg-emerald-500';
-    if (state === 'warning') return 'bg-amber-500';
-    return 'bg-rose-500';
-};
+const currentDate = ref(new Date());
+const dateStr = computed(() => currentDate.value.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }));
 
 onMounted(() => {
     initChart();
+    // Simulamos carga
+    setTimeout(() => { loading.value = false; }, 1200);
 });
 </script>
 
 <template>
-    <div class="w-full animate-fade-in">
+    <div class="w-full animate-fade-in p-4">
         
-        <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-surface-200 dark:border-surface-700 pb-5">
-            <div>
-                <h1 class="text-3xl font-light text-surface-900 dark:text-surface-0 tracking-tight">
-                    Dashboard <span class="font-bold text-primary-600">MesaCer</span>
-                </h1>
-                <p class="text-surface-500 dark:text-surface-400 mt-1 text-sm font-medium uppercase tracking-wider">
-                    {{ formattedDate }} <span class="mx-2 text-surface-300">|</span> {{ currentTime }}
-                </p>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div class="flex items-center gap-3">
+                <div v-if="loading">
+                    <Skeleton shape="circle" size="3rem" />
+                </div>
+                <Avatar v-else icon="pi pi-user" class="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-200" size="large" shape="circle" />
+                
+                <div>
+                    <h1 v-if="loading" class="mb-1"><Skeleton width="10rem" height="1.5rem" /></h1>
+                    <h1 v-else class="text-xl font-semibold text-surface-900 dark:text-surface-0 tracking-tight">
+                        Olá, {{ userName }}
+                    </h1>
+                    
+                    <p v-if="loading"><Skeleton width="6rem" height="1rem" /></p>
+                    <p v-else class="text-xs text-surface-500 font-medium capitalize">
+                        {{ dateStr }}
+                    </p>
+                </div>
             </div>
-            <div class="flex gap-3">
-                <Button label="Exportar Dados" icon="pi pi-download" severity="secondary" text size="small"/>
-                <Button label="Relatório Diário" icon="pi pi-file-pdf" size="small" outlined />
+
+            <div class="flex gap-2">
+                <Button icon="pi pi-bell" text rounded aria-label="Notificações" severity="secondary" />
+                <Button icon="pi pi-refresh" text rounded aria-label="Atualizar" @click="loading = true; setTimeout(() => loading=false, 1000)" />
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div v-for="(stat, index) in stats" :key="index" 
-                class="bg-surface-0 dark:bg-surface-800 p-5 rounded-lg shadow-sm border border-surface-200 dark:border-surface-700 hover:shadow-md transition-shadow duration-300">
+                class="bg-white dark:bg-surface-800 p-5 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm transition-all duration-200 hover:shadow-md hover:border-surface-300 dark:hover:border-surface-600 relative overflow-hidden group">
                 
-                <div class="flex justify-between items-start mb-2">
-                    <span class="text-xs font-bold text-surface-400 uppercase tracking-widest">{{ stat.title }}</span>
-                    <span class="text-xs font-bold px-2 py-1 rounded bg-surface-100 dark:bg-surface-700"
-                        :class="{
-                            'text-emerald-600': (stat.trendUp && !stat.negativeIsGood) || (!stat.trendUp && stat.negativeIsGood),
-                            'text-rose-600': (!stat.trendUp && !stat.negativeIsGood) || (stat.trendUp && stat.negativeIsGood)
-                        }">
-                        <i :class="stat.trendUp ? 'pi pi-arrow-up text-[10px]' : 'pi pi-arrow-down text-[10px]'"></i>
-                        {{ stat.trend }}
-                    </span>
+                <div v-if="loading" class="flex flex-col gap-2">
+                    <div class="flex justify-between">
+                        <Skeleton width="4rem" height="1rem" />
+                        <Skeleton size="2rem" shape="circle" />
+                    </div>
+                    <Skeleton width="60%" height="2rem" />
+                    <Skeleton width="30%" height="1rem" />
                 </div>
-                
-                <div class="flex items-baseline gap-1">
-                    <span class="text-3xl font-bold text-surface-800 dark:text-surface-0 tracking-tight">{{ stat.value }}</span>
-                    <span class="text-sm font-medium text-surface-500">{{ stat.unit }}</span>
+
+                <div v-else>
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-semibold text-surface-500 uppercase tracking-wide">{{ stat.title }}</span>
+                        <div :class="`p-2 rounded-lg ${stat.bgClass} ${stat.textClass}`">
+                            <i :class="stat.icon" class="text-lg"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-2xl font-bold text-surface-800 dark:text-surface-50">{{ stat.value }}</span>
+                        <span class="text-xs font-medium text-surface-400">{{ stat.unit }}</span>
+                    </div>
+
+                    <div class="mt-2 flex items-center text-xs font-medium">
+                        <span :class="stat.trendUp ? 'text-emerald-500' : 'text-rose-500'" class="flex items-center gap-1">
+                            <i :class="stat.trendUp ? 'pi pi-arrow-up' : 'pi pi-arrow-down'" style="font-size: 0.7rem"></i>
+                            {{ stat.trend }}
+                        </span>
+                        <span class="text-surface-400 ml-2">vs. período ant.</span>
+                    </div>
                 </div>
-                <p class="text-xs text-surface-400 mt-2">{{ stat.subtext }}</p>
             </div>
         </div>
 
         <div class="grid grid-cols-12 gap-6">
             
             <div class="col-span-12 lg:col-span-8">
-                <div class="bg-surface-0 dark:bg-surface-800 p-6 rounded-lg shadow-sm border border-surface-200 dark:border-surface-700 h-full">
+                <div class="bg-white dark:bg-surface-800 p-5 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm h-full flex flex-col">
                     <div class="flex justify-between items-center mb-6">
                         <div>
-                            <h3 class="text-lg font-bold text-surface-800 dark:text-surface-100">Performance de Produção</h3>
-                            <p class="text-xs text-surface-500">Output horário vs Capacidade instalada</p>
+                            <h3 class="text-base font-bold text-surface-800 dark:text-surface-100">Performance Produção</h3>
+                            <p class="text-xs text-surface-500 mt-0.5">Comparativo Output vs Meta</p>
                         </div>
-                        <div class="flex bg-surface-100 dark:bg-surface-900 rounded p-1">
-                            <button class="px-3 py-1 text-xs font-bold rounded bg-white dark:bg-surface-700 shadow-sm text-surface-900">Hoje</button>
-                            <button class="px-3 py-1 text-xs font-medium rounded text-surface-500 hover:text-surface-900 transition-colors">Semana</button>
+                        
+                        <div class="bg-surface-100 dark:bg-surface-900 p-0.5 rounded-lg flex">
+                            <button @click="timeRange = 'today'" :class="{'bg-white dark:bg-surface-700 shadow-sm text-surface-900': timeRange === 'today', 'text-surface-500': timeRange !== 'today'}" class="px-3 py-1 text-xs font-medium rounded-md transition-all">Hoje</button>
+                            <button @click="timeRange = 'week'" :class="{'bg-white dark:bg-surface-700 shadow-sm text-surface-900': timeRange === 'week', 'text-surface-500': timeRange !== 'week'}" class="px-3 py-1 text-xs font-medium rounded-md transition-all">Semana</button>
                         </div>
                     </div>
-                    <div class="relative h-[320px] w-full">
-                        <Chart type="line" :data="chartData" :options="chartOptions" class="h-full w-full" />
+
+                    <div class="flex-1 relative min-h-[300px]">
+                        <Skeleton v-if="loading" width="100%" height="100%" />
+                        <Chart v-else type="line" :data="chartData" :options="chartOptions" class="h-full w-full" />
                     </div>
                 </div>
             </div>
 
-            <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+            <div class="col-span-12 lg:col-span-4 flex flex-col gap-4">
                 
-                <div class="bg-surface-0 dark:bg-surface-800 p-6 rounded-lg shadow-sm border border-surface-200 dark:border-surface-700">
-                    <h3 class="text-sm font-bold text-surface-800 dark:text-surface-100 mb-4 uppercase tracking-wide">Status Equipamentos</h3>
-                    <div class="space-y-4">
-                        <div v-for="machine in machines" :key="machine.name">
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="font-medium text-surface-600 dark:text-surface-300">{{ machine.name }}</span>
-                                <span class="font-mono text-surface-500">{{ machine.status }}%</span>
+                <div class="bg-white dark:bg-surface-800 p-5 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-surface-800 dark:text-surface-100">Linhas & Prensas</h3>
+                        <Button icon="pi pi-ellipsis-h" text rounded size="small" class="!p-0 !w-6 !h-6" />
+                    </div>
+                    
+                    <div v-if="loading" class="space-y-3">
+                         <Skeleton v-for="i in 4" :key="i" height="2rem" class="mb-2" />
+                    </div>
+                    
+                    <div v-else class="space-y-3">
+                        <div v-for="machine in machines" :key="machine.name" class="group cursor-pointer">
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <span class="font-medium text-surface-700 dark:text-surface-200 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full" :class="{
+                                        'bg-emerald-500': machine.state === 'active',
+                                        'bg-rose-500': machine.state === 'stopped',
+                                        'bg-amber-500': machine.state === 'warning'
+                                    }"></span>
+                                    {{ machine.name }}
+                                </span>
+                                <span class="font-mono text-surface-500 group-hover:text-surface-900 transition-colors">{{ machine.status }}%</span>
                             </div>
-                            <div class="h-1.5 w-full bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full transition-all duration-500" 
-                                    :class="getSeverity(machine.state)"
+                            <div class="h-1.5 w-full bg-surface-100 dark:bg-surface-800 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-1000 ease-out"
+                                    :class="{
+                                        'bg-emerald-500': machine.state === 'active',
+                                        'bg-rose-500': machine.state === 'stopped',
+                                        'bg-amber-500': machine.state === 'warning'
+                                    }"
                                     :style="{ width: machine.status + '%' }">
                                 </div>
                             </div>
@@ -208,20 +286,25 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <div class="bg-surface-0 dark:bg-surface-800 p-6 rounded-lg shadow-sm border border-surface-200 dark:border-surface-700 flex-1">
-                    <h3 class="text-sm font-bold text-surface-800 dark:text-surface-100 mb-4 uppercase tracking-wide">Live Feed</h3>
-                    <Timeline :value="activities" class="custom-timeline">
+                <div class="bg-white dark:bg-surface-800 p-5 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm flex-1">
+                    <h3 class="text-sm font-bold text-surface-800 dark:text-surface-100 mb-4">Live Feed</h3>
+                    
+                    <Skeleton v-if="loading" height="100%" />
+                    
+                    <Timeline v-else :value="activities" class="custom-timeline text-xs">
                         <template #marker="slotProps">
-                            <span class="w-2 h-2 rounded-full ring-2 ring-offset-2 ring-offset-surface-0 dark:ring-offset-surface-800" 
-                                :style="{ backgroundColor: slotProps.item.color, ringColor: slotProps.item.color }"></span>
+                            <span class="flex w-6 h-6 items-center justify-center rounded-full ring-1 ring-surface-200 dark:ring-surface-700 bg-surface-0 dark:bg-surface-800" 
+                                :style="{ color: slotProps.item.color }">
+                                <i :class="slotProps.item.icon" style="font-size: 0.6rem"></i>
+                            </span>
                         </template>
                         <template #content="slotProps">
-                            <div class="pb-6 pl-2">
+                            <div class="pb-5 pl-1">
                                 <div class="flex justify-between items-start">
-                                    <span class="text-sm font-semibold text-surface-700 dark:text-surface-200 block">{{ slotProps.item.status }}</span>
-                                    <span class="text-[10px] text-surface-400 font-mono">{{ slotProps.item.date }}</span>
+                                    <span class="font-semibold text-surface-700 dark:text-surface-200">{{ slotProps.item.status }}</span>
+                                    <span class="text-[10px] text-surface-400 font-mono">{{ slotProps.item.time }}</span>
                                 </div>
-                                <p class="text-xs text-surface-500 mt-0.5 leading-relaxed">{{ slotProps.item.description }}</p>
+                                <p class="text-surface-500 mt-1 leading-tight line-clamp-2">{{ slotProps.item.desc }}</p>
                             </div>
                         </template>
                     </Timeline>
@@ -233,24 +316,23 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Animación de entrada suave */
+/* Solo estilos CSS normales para el Timeline, sin @apply */
 .animate-fade-in {
-    animation: fadeIn 0.5s ease-out;
+    animation: fadeIn 0.4s ease-out forwards;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Reset de Timeline para look minimalista */
-:deep(.custom-timeline .p-timeline-event-opposite) {
-    display: none;
+:deep(.custom-timeline .p-timeline-event-opposite) { 
+    display: none; 
 }
-:deep(.custom-timeline .p-timeline-event-connector) {
+:deep(.custom-timeline .p-timeline-event-connector) { 
     background-color: var(--surface-200);
 }
-.dark :deep(.custom-timeline .p-timeline-event-connector) {
+.dark :deep(.custom-timeline .p-timeline-event-connector) { 
     background-color: var(--surface-700);
 }
 </style>

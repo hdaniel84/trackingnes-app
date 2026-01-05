@@ -1,21 +1,21 @@
-# Etapa 1: Compilación (Maven)
-FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
-WORKDIR /app
-COPY pom.xml .
-COPY src ./src
-
-# Compilamos saltando tests para ir rápido
-RUN mvn clean package -DskipTests
-#RUN mvn clean package -DskipTests -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true
-
-# Etapa 2: Ejecución (Ligera)
+# Ya no necesitamos Maven ni compilar aquí.
+# Usamos directamente la imagen de Java para ejecutar.
 FROM eclipse-temurin:21-jdk-alpine
-WORKDIR /app
-# Copiamos solo el jar generado
-COPY --from=build /app/target/*.jar app.jar
 
-# Usuario no-root por seguridad
+WORKDIR /app
+
+# Crear grupo y usuario de seguridad (Best Practice)
 RUN addgroup -S spring && adduser -S spring -G spring
+
+# AQUÍ ESTÁ EL CAMBIO CLAVE:
+# Copiamos el .jar que tú subiste manualmente a la carpeta del servidor.
+# El asterisco *.jar toma cualquier archivo .jar que esté ahí.
+COPY *.jar app.jar
+
+# Cambiamos permisos para que el usuario 'spring' sea el dueño
+RUN chown spring:spring app.jar
+
+# Cambiamos al usuario limitado
 USER spring:spring
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

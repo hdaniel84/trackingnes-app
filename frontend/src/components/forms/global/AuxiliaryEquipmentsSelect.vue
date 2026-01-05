@@ -2,7 +2,6 @@
 import { onMounted, computed } from 'vue';
 import { useEquipmentStore } from '@/stores/equipmentStore';
 import MultiSelect from 'primevue/multiselect';
-import ProgressSpinner from 'primevue/progressspinner';
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] }, // Array de IDs
@@ -37,7 +36,7 @@ onMounted(() => {
 <template>
   <div class="w-full">
     <div v-if="store.loading">
-      <ProgressSpinner style="width:20px;height:20px" />
+      <Skeleton width="100%" height="3rem" borderRadius="6px"></Skeleton>
     </div>
     <MultiSelect v-else v-model="selectedIds" :options="filteredOptions" optionLabel="description" optionValue="id"
       display="chip" inputId="aux_select" placeholder="Selecionar Equipamentos Auxiliares" filter showClear fluid class="w-full" :disabled="filteredOptions.length === 0">

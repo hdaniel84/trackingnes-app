@@ -47,29 +47,6 @@ public class TrackingController {
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 
-    /*
-     * @GetMapping
-     * public ResponseEntity<Page<TrackingListDTO>> getAll(
-     * 
-     * @PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable
-     * pageable,
-     * 
-     * @RequestParam(required = false) Long phaseId,
-     * 
-     * @RequestParam(required = false) Long productId,
-     * 
-     * @RequestParam(required = false) Long teamId,
-     * 
-     * @RequestParam(required = false) Long id,
-     * 
-     * @RequestParam(required = false) String logisticUnit,
-     * 
-     * @RequestParam(required = false) @DateTimeFormat(iso =
-     * DateTimeFormat.ISO.DATE) LocalDate date) {
-     * return ResponseEntity.ok(service.getAll(pageable, phaseId, productId, teamId,
-     * id, logisticUnit, date));
-     * }
-     */
 
     @GetMapping("/{id}")
     public ResponseEntity<TrackingResponseDTO> getById(@PathVariable Long id) {

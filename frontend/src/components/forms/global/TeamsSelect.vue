@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted, computed } from 'vue';
 import { useTeamStore } from '@/stores/teamStore';
-import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
 import Select from 'primevue/select';
 
@@ -49,9 +48,9 @@ onMounted(async () => {
 
 <template>
   <div class="w-full">
-    <div v-if="store.loading" class="flex items-center gap-2 py-2">
-      <ProgressSpinner style="width: 30px; height: 30px" strokeWidth="6" />
-      <span class="text-sm text-surface-500">A carregar equipas...</span>
+    <div v-if="store.loading" class="flex flex-col gap-3">
+      <Skeleton width="4rem" height="1rem" class="mb-1"></Skeleton>
+      <Skeleton width="100%" height="3rem" borderRadius="6px"></Skeleton>
     </div>
 
     <div v-else-if="store.error">

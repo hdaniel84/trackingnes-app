@@ -1,7 +1,6 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue';
 import { useTrackingPrensasStore } from '@/stores/trackingPrensasStore';
-import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
 import Select from 'primevue/select';
 
@@ -95,8 +94,7 @@ const filteredProducts = computed(() => {
 <template>
     <div>
         <div v-if="trackingPrensasStore.loading">
-            <ProgressSpinner style="width: 50px; height: 50px" strokeWidth="8" animationDuration=".5s" />
-            <p>Carregando...</p>
+            <Skeleton width="100%" height="3rem" borderRadius="6px"></Skeleton>
         </div>
 
         <div v-else-if="trackingPrensasStore.error">

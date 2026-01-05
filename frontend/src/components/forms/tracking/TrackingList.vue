@@ -4,7 +4,6 @@ import { useTrackingStore } from '@/stores/trackingStore';
 import { useFormatters } from '@/layout/composables/useFormatters';
 import { usePhase } from '@/layout/composables/usePhase';
 
-import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
 import Tag from 'primevue/tag';
 import Button from 'primevue/button';
@@ -75,21 +74,22 @@ const handleRefresh = () => { loadData(); };
         <div class="flex items-center mb-3">
           <i class="pi pi-history mr-2 text-primary-500 text-xl"></i>
           <span class="font-bold text-lg text-surface-800 dark:text-surface-100">
-            Últimos Registos 
+            Últimos Registos
             <span class="text-surface-500 font-normal text-sm ml-1">({{ phaseMetadata.title }})</span>
           </span>
         </div>
 
         <div class="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
           <div class="flex gap-2 w-full sm:w-auto">
-            <Select v-model="sortOrder" :options="sortOptions" optionLabel="label" optionValue="value" placeholder="Ordenar" size="small" class="w-full sm:w-48">
-                <template #value="slotProps">
-                    <div v-if="slotProps.value" class="flex items-center">
-                        <i class="pi pi-sort-alt mr-2 text-primary-500"></i>
-                        {{ sortOptions.find(o => o.value === slotProps.value)?.label }}
-                    </div>
-                    <span v-else>{{ slotProps.placeholder }}</span>
-                </template>
+            <Select v-model="sortOrder" :options="sortOptions" optionLabel="label" optionValue="value"
+              placeholder="Ordenar" size="small" class="w-full sm:w-48">
+              <template #value="slotProps">
+                <div v-if="slotProps.value" class="flex items-center">
+                  <i class="pi pi-sort-alt mr-2 text-primary-500"></i>
+                  {{sortOptions.find(o => o.value === slotProps.value)?.label}}
+                </div>
+                <span v-else>{{ slotProps.placeholder }}</span>
+              </template>
             </Select>
 
             <Select v-model="pageSize" :options="sizeOptions" placeholder="Qtd" size="small" class="w-24" />
@@ -99,9 +99,8 @@ const handleRefresh = () => { loadData(); };
         </div>
       </div>
 
-      <div v-if="store.loading" class="flex-1 flex flex-col items-center justify-center">
-        <ProgressSpinner style="width: 50px; height: 50px" strokeWidth="6" />
-        <p class="mt-3 text-surface-600 dark:text-surface-400 animate-pulse text-sm">A carregar dados...</p>
+      <div v-if="store.loading" class="flex flex-col gap-3">
+        <Skeleton width="100%" height="30rem" borderRadius="6px"></Skeleton>
       </div>
 
       <div v-else-if="store.fetchError" class="flex-none">
@@ -129,14 +128,16 @@ const handleRefresh = () => { loadData(); };
                 <div class="text-sm font-semibold text-surface-700 dark:text-surface-200 truncate leading-tight">
                   {{ item.product?.description || 'Produto Desconhecido' }}
                 </div>
-                
+
                 <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-surface-500 dark:text-surface-400">
-                  <div class="flex items-center dark:bg-surface-900 px-1.5 py-0.5 rounded border-surface-200 dark:border-surface-700">
+                  <div
+                    class="flex items-center dark:bg-surface-900 px-1.5 py-0.5 rounded border-surface-200 dark:border-surface-700">
                     <i class="pi pi-cart-plus mr-1 text-primary-500"></i>
                     <span v-if="phaseId <= 4">Carro: </span>
                     <span v-else-if="phaseId <= 6">Vagão: </span>
                     <span v-else>Palete: </span>
-                    <strong class="ml-1 text-surface-700 dark:text-surface-300">{{ item.logisticUnit || 'N/A' }}</strong>
+                    <strong class="ml-1 text-surface-700 dark:text-surface-300">{{ item.logisticUnit || 'N/A'
+                      }}</strong>
                   </div>
                   <div class="flex items-center">
                     <i class="pi pi-calendar mr-1 text-primary-500"></i>
@@ -149,33 +150,29 @@ const handleRefresh = () => { loadData(); };
 
           <div class="flex justify-between items-center mt-2 pt-2 border-t border-surface-200 dark:border-surface-700">
             <div class="text-xs italic text-surface-500 dark:text-surface-400 truncate max-w-[60%] flex items-center">
-              <i class="pi pi-users mr-1.5"></i> 
+              <i class="pi pi-users mr-1.5"></i>
               <span class="truncate">{{ item.team?.description }} ({{ item.team?.sectionDescription }})</span>
             </div>
-            
+
             <div class="flex gap-1">
-                <Button 
-                    icon="pi pi-sitemap" text rounded severity="info" size="small"
-                    v-tooltip.top="'Rastreabilidade'" @click.stop="openTraceability(item)" 
-                />
-                <Button 
-                    v-can="`WRITE_${phaseMetadata.permissionSuffix}`" icon="pi pi-pencil" text rounded
-                    severity="secondary" size="small" @click.stop="openEditDialog(item)" 
-                />
+              <Button icon="pi pi-sitemap" text rounded severity="info" size="small" v-tooltip.top="'Rastreabilidade'"
+                @click.stop="openTraceability(item)" />
+              <Button v-can="`WRITE_${phaseMetadata.permissionSuffix}`" icon="pi pi-pencil" text rounded
+                severity="secondary" size="small" @click.stop="openEditDialog(item)" />
             </div>
           </div>
         </div>
 
         <div v-if="(!store.items || store.items.length === 0)" class="text-center py-10 opacity-60">
           <div class="bg-surface-100 dark:bg-surface-800 rounded-full p-4 inline-block mb-3">
-             <i class="pi pi-filter-slash text-2xl text-surface-500"></i>
+            <i class="pi pi-filter-slash text-2xl text-surface-500"></i>
           </div>
           <p class="text-sm text-surface-600">Nenhum registo encontrado com estes filtros.</p>
         </div>
       </div>
 
     </div>
-    
+
     <TrackingTrace v-model:visible="showTreeDialog" :trackingId="selectedTreeId" />
     <TrackingEditDialog v-model:visible="showEditDialog" :item="selectedItem" @success="handleRefresh" />
     <TrackingDetailDialog v-model:visible="showDetailDialog" :item="selectedItem" />
@@ -187,13 +184,16 @@ const handleRefresh = () => { loadData(); };
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--surface-300);
   border-radius: 20px;
 }
+
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--surface-600);
 }

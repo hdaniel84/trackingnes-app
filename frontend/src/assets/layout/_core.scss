@@ -22,3 +22,72 @@ a {
 .layout-wrapper {
     min-height: 100vh;
 }
+
+/* --- ENTERPRISE COMPACT MODE --- */
+
+:root {
+    /* 1. Reducimos el tamaño base de la letra (Sakai usa 14px o 1rem por defecto) */
+    /* Esto escala automáticamente botones, inputs y menús */
+    font-size: 12px; 
+
+    /* 2. Variables de Espaciado de PrimeVue (Overriding) */
+    /* Reducimos el "aire" dentro de los paneles y tarjetas */
+    --content-padding: 1rem;     /* Antes era 1.5rem o 2rem */
+    --inline-spacing: 0.5rem;    /* Espacio entre elementos horizontales */
+}
+
+/* Ajuste específico para pantallas grandes (Factory floor monitors) */
+@media screen and (min-width: 1400px) {
+    :root {
+        font-size: 14px; /* Recuperamos tamaño en monitores grandes para legibilidad */
+    }
+}
+
+/* Reducir altura y padding de Inputs y Dropdowns */
+.p-inputtext, 
+.p-dropdown, 
+.p-multiselect, 
+.p-calendar input {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+    font-size: 0.95rem; /* Letra un pelín más chica dentro del input */
+}
+
+/* Botones más compactos */
+.p-button {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+    
+    /* Iconos dentro de botones */
+    .p-button-icon {
+        font-size: 0.9rem;
+    }
+}
+
+/* Tabla Compacta estilo Enterprise */
+.p-datatable {
+    .p-datatable-thead > tr > th {
+        padding: 0.5rem 0.75rem !important; /* Cabeceras más delgadas */
+        font-weight: 700;
+        background-color: #f8f9fa; /* Fondo gris suave para diferenciar */
+        color: #343a40;
+    }
+
+    .p-datatable-tbody > tr > td {
+        padding: 0.4rem 0.75rem !important; /* Celdas mucho más compactas */
+        font-size: 0.95rem;
+    }
+    
+    /* Si usas filas expandibles o botones en filas, ajusta esto */
+    .p-button.p-button-icon-only.p-button-rounded {
+        height: 1.8rem;
+        width: 1.8rem;
+    }
+}
+
+.card {
+    padding: 1.25rem !important; /* Reducido de 2rem */
+    margin-bottom: 1rem !important; /* Menos espacio entre tarjetas verticales */
+    border-radius: 8px; /* Bordes menos redondeados se ven más "serios" */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03); /* Sombra más sutil */
+}

@@ -17,7 +17,7 @@ services:
   tracking-backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile
       network: host
     container_name: tracking-backend
     restart: always
