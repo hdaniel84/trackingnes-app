@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted } from 'vue'; // Agregamos onMounted
-import { defineProps, defineEmits } from 'vue';
 import { useParameterStore } from '@/stores/parameterStore';
 import ParameterSelect from '@/components/forms/global/ParameterSelect.vue';
 
