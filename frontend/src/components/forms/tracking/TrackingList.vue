@@ -130,15 +130,6 @@ const handleRefresh = () => { loadData(); };
                 </div>
 
                 <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-surface-500 dark:text-surface-400">
-                  <div
-                    class="flex items-center dark:bg-surface-900 px-1.5 py-0.5 rounded border-surface-200 dark:border-surface-700">
-                    <i class="pi pi-cart-plus mr-1 text-primary-500"></i>
-                    <span v-if="phaseId <= 4">Carro: </span>
-                    <span v-else-if="phaseId <= 6">Vagão: </span>
-                    <span v-else>Palete: </span>
-                    <strong class="ml-1 text-surface-700 dark:text-surface-300">{{ item.logisticUnit || 'N/A'
-                      }}</strong>
-                  </div>
                   <div class="flex items-center">
                     <i class="pi pi-calendar mr-1 text-primary-500"></i>
                     {{ formatDateTime(item.startTime) }}

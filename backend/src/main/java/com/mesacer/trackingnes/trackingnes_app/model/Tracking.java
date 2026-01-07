@@ -42,16 +42,20 @@ public class Tracking {
 
     // 2. NUEVO: LISTA DE EQUIPAMIENTOS AUXILIARES (No mandatory)
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "tracking_equipments", 
-            joinColumns = @JoinColumn(name = "id_tracking"), inverseJoinColumns = @JoinColumn(name = "id_equipment"))
+    @JoinTable(name = "tracking_equipments", joinColumns = @JoinColumn(name = "id_tracking"), inverseJoinColumns = @JoinColumn(name = "id_equipment"))
     private List<Equipment> auxiliaryEquipments = new ArrayList<>();
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_phase")
     private Phase phase;
 
-    @Column(name = "id_logistic_unit")
-    private Long logisticUnit;
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+        name = "tracking_logistic_units", 
+        joinColumns = @JoinColumn(name = "tracking_id")
+    )
+    @Column(name = "logistic_unit") // Nombre de la columna del valor
+    private List<Long> logisticUnits = new ArrayList<>();
 
     @Column(nullable = false)
     private Integer quantity;
@@ -62,11 +66,20 @@ public class Tracking {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
-    // RELACIÓN RECURSIVA (Self-Join)
-    @ManyToOne(fetch = FetchType.LAZY) // LAZY es obligatorio aquí para performance
-    @JoinColumn(name = "id_tracking_source")
-    @ToString.Exclude // Evita bucles infinitos en los logs de Lombok
-    private Tracking trackingSource;
+    // 1. LOS PADRES (De dónde vengo): Inputs
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "tracking_composition", joinColumns = @JoinColumn(name = "id_child"), // YO (el tracking actual)
+            inverseJoinColumns = @JoinColumn(name = "id_parent") // ELLOS (los orígenes)
+    )
+    @ToString.Exclude
+    private List<Tracking> sourceTrackings = new ArrayList<>();
+
+    // 2. LOS HIJOS (A dónde fui): Outputs
+    // Esta parte es opcional pero MUY recomendada para trazabilidad hacia adelante
+    // (Forward Traceability)
+    @ManyToMany(mappedBy = "sourceTrackings", fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private List<Tracking> destinationTrackings = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
     private String comments;

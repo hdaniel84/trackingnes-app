@@ -21,18 +21,13 @@ const dateValidationOptions = {
 // --- 2. BASE OBJECT (La estructura común) ---
 // Nota: No lo exportamos directamente porque le falta la validación de fechas
 const trackingBaseObject = z.object({
-  // A. Números
-  logisticUnit: z
-    .number({
-      required_error: 'Unidade logística é obrigatória',
-      invalid_type_error: 'Unidade logística é obrigatória',
-    })
-    .min(1, 'Unidade logística deve ser positiva'),
+  logisticUnits: z.array(z.number())
+    .min(1, 'É obrigatório indicar pelo menos uma unidade logística (Carro/Vagão)'),
 
-  trackingSourceId: z.number({
-    required_error: 'É obrigatório selecionar lote da fase anterior',
-    invalid_type_error: 'Origem inválida',
-  }),
+  sourceTrackingIds: z.array(z.number(), {
+    required_error: 'É obrigatório selecionar pelo menos um lote de origem',
+    invalid_type_error: 'Origem inválida'
+  }).min(1, 'É obrigatório selecionar pelo menos um lote de origem'),
 
   quantity: z
     .number({
@@ -143,7 +138,7 @@ export const trackingSchema = trackingBaseObject.refine(
 
 export const trackingPrensasFormSchema = trackingBaseObject
   .omit({
-    trackingSourceId: true, // AQUÍ ELIMINAMOS SU VALIDACIÓN
+    sourceTrackingIds: true,
   })
   .refine(dateValidation, dateValidationOptions);
 

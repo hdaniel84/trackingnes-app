@@ -8,8 +8,6 @@ import java.util.List;
 public class TrackingResponseDTO {
 
     private Long id;
-    
-    // Aquí sí devolvemos el objeto completo para que el Front pueda mostrar descripciones
     private TeamDTO team;
     private ShiftDTO shift;
     private ProductDTO product;
@@ -17,16 +15,13 @@ public class TrackingResponseDTO {
     private PhaseDTO phase;
     private List<EquipmentDTO> auxiliaryEquipments;
 
-    private Long logisticUnit;
+    private List<Long> logisticUnits;
     private Integer quantity;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
-    private Long trackingSourceId;
-    // Opcional: Info extra para mostrar en el frontend sin hacer otra petición
-    // Ej: "Producto X (Fase Anterior)"
-    private String trackingSourceProductDescription;
-    
+    private List<TrackingSourceSummaryDTO> sourceTrackings;
+
     // Audit fields (Solo lectura)
     private LocalDateTime createdDate;
     private String createdByUsername; // Ojo: A veces es mejor devolver el nombre que el ID
@@ -37,4 +32,11 @@ public class TrackingResponseDTO {
     private List<TrackingParameterResponseDTO> parameters;
 
     private List<TrackingRawMaterialResponseDTO> rawMaterials;
+
+    @Data
+    public static class TrackingSourceSummaryDTO {
+        private Long id;
+        private List<Long> logisticUnits;
+        private String productDescription;
+    }
 }

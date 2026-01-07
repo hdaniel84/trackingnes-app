@@ -4,15 +4,12 @@ import { useForm, useField } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { ref, computed, watch } from 'vue';
 import { usePhase } from '@/layout/composables/usePhase';
-import TrackingService from '@/api/trackingApi';
-//Inyección de materias y parámetros mandatory
 import { useRawMaterialStore } from '@/stores/rawMaterialStore';
 import { useParameterStore } from '@/stores/parameterStore';
 
 // Helpers & UI
 import { useNotify } from '@/layout/composables/notify';
 import { useErrorDialog } from '@/layout/composables/errorDialog';
-import InputNumber from 'primevue/inputnumber';
 import DatePicker from 'primevue/datepicker';
 import Textarea from 'primevue/textarea';
 import Button from 'primevue/button';
@@ -32,7 +29,7 @@ import TrackingSuccessDialog from '@/components/forms/tracking/TrackingSuccessDi
 const props = defineProps({
   item: Object,
   mode: { type: String, default: 'create' },
-  validationSchema: { type: Object, required: true }, // 🚀 Schema Zod Inyectado
+  validationSchema: { type: Object, required: true }, // Schema Zod Inyectado
 });
 
 const emit = defineEmits(['success', 'cancel']);
@@ -73,7 +70,9 @@ const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta, values: 
     startTime: new Date(),
     rawMaterials: [{ id: null, rawMaterialId: null, value: '' }],
     parameters: [],
-    auxiliaryEquipmentIds: []
+    auxiliaryEquipmentIds: [],
+    sourceTrackingIds: [],
+    logisticUnits: []
   }
 });
 
@@ -188,8 +187,8 @@ const injectMandatoryParameters = async () => {
 
 // Definición de campos (para v-model manual si es necesario)
 const { value: product } = useField('product');
-const { value: trackingSourceId } = useField('trackingSourceId');
-const { value: logisticUnit } = useField('logisticUnit');
+const { value: sourceTrackingIds } = useField('sourceTrackingIds');
+const { value: logisticUnits } = useField('logisticUnits');
 const { value: startTime } = useField('startTime');
 const { value: endTime } = useField('endTime');
 const { value: comments } = useField('comments');
@@ -202,7 +201,8 @@ const { value: rawMaterials } = useField('rawMaterials');
 const { value: auxiliaryEquipmentIds } = useField('auxiliaryEquipmentIds');
 
 // 4. LÓGICA DE ORIGEN (Tarjeta vs Select)
-const currentSourceDetails = ref(null);
+//const currentSourceDetails = ref(null);
+const initialSourceItems = ref([]);
 const showSourceSelect = ref(true);
 
 // Calculamos el ID de referencia para el filtro (ej: ShapeId o ProductCode)
@@ -211,33 +211,23 @@ const targetReferenceId = computed(() => {
   return product.value?.id || null;
 });
 
-const loadSourceDetails = async (id) => {
-  try {
-    const response = await TrackingService.getById(id);
-    currentSourceDetails.value = response.data;
-    showSourceSelect.value = false; // Modo Tarjeta
-  } catch (e) {
-    console.error("Error loading source details", e);
-    showSourceSelect.value = true; // Fallback a Select
-  }
-};
-
-// Watcher inteligente para el producto (Reset de Origen)
+// Watcher para resetear si cambia producto padre
 watch(product, (newVal, oldVal) => {
-  // Si estamos editando y cambiamos el producto, el origen actual ya no es válido
   if (oldVal && newVal?.id !== oldVal?.id) {
-    trackingSourceId.value = null;
-    showSourceSelect.value = true;
-    currentSourceDetails.value = null;
+    sourceTrackingIds.value = []; // Reset array
+    initialSourceItems.value = [];
   }
 });
 
 // 5. CARGA DE DATOS (EDICIÓN)
 watch(() => props.item, async (val) => {
   if (val) {
+    const sourceIds = (val.sourceTrackings || []).map(s => s.id);
+    initialSourceItems.value = val.sourceTrackings || [];
+
     setValues({
-      trackingSourceId: val.trackingSourceId,
-      logisticUnit: val.logisticUnit,
+      sourceTrackingIds: sourceIds,
+      logisticUnits: val.logisticUnits || [],
       startTime: new Date(val.startTime),
       endTime: val.endTime ? new Date(val.endTime) : null,
       comments: val.comments,
@@ -263,11 +253,6 @@ watch(() => props.item, async (val) => {
         valueDate: p.valueDate ? new Date(p.valueDate) : null
       }))
     });
-
-    // Cargar detalles de tarjeta si hay origen
-    if (showTrackingSource.value && val.trackingSourceId) {
-      await loadSourceDetails(val.trackingSourceId);
-    }
 
     await injectMandatoryRawMaterials();
     await injectMandatoryParameters();
@@ -307,7 +292,7 @@ const onSubmit = handleSubmit(async (values) => {
     const payload = {
       // Campos directos
       phaseId: phaseId.value, // 🚀 ID automático desde el contexto
-      logisticUnit: values.logisticUnit,
+      logisticUnits: values.logisticUnits,
       startTime: values.startTime,
       endTime: values.endTime,
       comments: values.comments,
@@ -317,7 +302,7 @@ const onSubmit = handleSubmit(async (values) => {
       shiftId: values.shift?.id,
       equipmentId: values.equipment?.id,
       auxiliaryEquipmentIds: values.auxiliaryEquipmentIds,
-      trackingSourceId: values.trackingSourceId,
+      sourceTrackingIds: values.sourceTrackingIds,
       // Arrays
       rawMaterials: rawMaterialsPayload,
       parameters: parametersPayload
@@ -325,8 +310,6 @@ const onSubmit = handleSubmit(async (values) => {
 
     if (props.mode === 'create') {
       const newRecord = await store.create(payload);
-      //notifySuccess('Registo criado com sucesso');
-      // Guardamos ID y mostramos Dialog
       createdTrackingId.value = newRecord.id;
       showSuccessDialog.value = true;
 
@@ -342,16 +325,16 @@ const onSubmit = handleSubmit(async (values) => {
           rawMaterials: values.rawMaterials, // Conserva MPs configuradas
           auxiliaryEquipmentIds: values.auxiliaryEquipmentIds,
           // Limpia variables
-          logisticUnit: null,
+          logisticUnits: [],
           quantity: null,
           comments: null,
           endTime: null,
-          trackingSourceId: values.trackingSourceId // Deja origen
+          sourceTrackingIds: []
         }
       });
       // Forzar mostrar select de nuevo en create loop
       showSourceSelect.value = true;
-      currentSourceDetails.value = null;
+      initialSourceItems.value = [];
 
     } else {
       await store.update(props.item.id, payload);
@@ -365,11 +348,6 @@ const onSubmit = handleSubmit(async (values) => {
   }
 });
 
-// Manejador para cerrar el diálogo
-const onDialogClose = () => {
-  // Emitir success al padre al cerrar el modal
-  // emit('success'); 
-};
 </script>
 
 <template>
@@ -398,51 +376,25 @@ const onDialogClose = () => {
           </div>
 
           <div v-if="showTrackingSource" class="col-span-12 md:col-span-6">
+            <TrackingSourceSelect v-model="sourceTrackingIds" :initial-selection="initialSourceItems"
+              :allowedPhases="currentRules.allowedSourcePhases" :target-reference-id="targetReferenceId"
+              :match-reference="currentRules.matchReference" :filter-type="currentRules.filterType"
+              label="Origens (Fase Anterior)" :disabled="!product" />
 
-            <div v-if="!showSourceSelect && currentSourceDetails"
-              class="relative bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex flex-col gap-1">
-              <label class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                Origem Atual (Gravada)
-              </label>
-              <div class="flex items-center gap-3">
-                <i class="pi pi-arrow-circle-right text-blue-500 text-lg"></i>
-                <div class="text-sm">
-                  <p class="font-bold text-surface-800 dark:text-surface-100">
-                    {{ currentSourceDetails.product?.description }}
-                  </p>
-                  <span class="text-xs text-surface-500">
-                    ID: {{ currentSourceDetails.id }} |
-                    {{ currentSourceDetails.logisticUnit ? 'Carro: ' + currentSourceDetails.logisticUnit : 'N/A' }}
-                  </span>
-                </div>
-              </div>
-              <button type="button" @click="showSourceSelect = true"
-                class="absolute top-2 right-2 text-blue-400 hover:text-blue-600 transition-colors">
-                <i class="pi pi-pencil"></i>
-              </button>
-            </div>
-
-            <div v-else>
-              <TrackingSourceSelect v-model="trackingSourceId" :allowedPhases="currentRules.allowedSourcePhases"
-                :target-reference-id="targetReferenceId" :match-reference="currentRules.matchReference"
-                :filter-type="currentRules.filterType" label="Origem (Fase Anterior)" :disabled="!product" />
-              <small v-if="errors.trackingSourceId" class="text-red-500 mt-1 text-xs">
-                {{ errors.trackingSourceId }}
-              </small>
-              <small v-if="!product" class="text-surface-400 italic text-xs block mt-1">
-                * Selecione o produto primeiro
-              </small>
-            </div>
+            <small v-if="errors.sourceTrackingIds" class="text-red-500 mt-1 text-xs">
+              {{ errors.sourceTrackingIds }}
+            </small>
+            <small v-if="!product" class="text-surface-400 italic text-xs block mt-1">
+              * Selecione o produto primeiro
+            </small>
           </div>
-
+          
           <div class="col-span-6 md:col-span-3">
-            <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">
-              <div v-if="phaseId <= 4"> Carro (Un. Logística)</div>
-              <div v-else-if="phaseId <= 5"> Vagão (Un. Logística)</div>
-              <div v-else> Palete (Un. Logística)</div>
-            </label>
-            <InputNumber v-model="logisticUnit" :useGrouping="false" fluid class="w-full" placeholder="Ex: 123" />
-            <small v-if="errors.logisticUnit" class="text-red-500 mt-1 text-xs">{{ errors.logisticUnit }}</small>
+             <LogisticUnitsInput 
+                v-model="logisticUnits"
+                :label="phaseId <= 4 ? 'Carros (Un. Logísticas)' : (phaseId <= 5 ? 'Vagões' : 'Paletes')"
+                :error-message="errors.logisticUnits"
+             />
           </div>
 
           <div class="col-span-6 md:col-span-3">
@@ -557,8 +509,7 @@ const onDialogClose = () => {
         </ul>
       </div>
       <Divider />
-      <TrackingSuccessDialog v-model:visible="showSuccessDialog" :trackingId="createdTrackingId"
-        @close="onDialogClose" />
+      <TrackingSuccessDialog v-model:visible="showSuccessDialog" :trackingId="createdTrackingId" />
     </form>
   </div>
 </template>

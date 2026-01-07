@@ -5,6 +5,8 @@ import com.mesacer.trackingnes.trackingnes_app.model.Tracking;
 import org.mapstruct.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface TraceabilityMapper {
@@ -13,9 +15,9 @@ public interface TraceabilityMapper {
     @Mapping(target = "key", expression = "java(String.valueOf(entity.getId()))")
     @Mapping(target = "expanded", constant = "true")
     @Mapping(target = "type", constant = "person")
-    @Mapping(target = "children", ignore = true) // La recursión la maneja el Service
-    @Mapping(target = "data", source = "entity") // Delegamos el mapeo de datos internos
-    @Mapping(target = "styleClass", ignore = true) // Lo calculamos en @AfterMapping
+    @Mapping(target = "children", ignore = true)
+    @Mapping(target = "data", source = "entity")
+    @Mapping(target = "styleClass", ignore = true)
     TraceabilityNodeDTO toDTO(Tracking entity);
 
     // MAPPING DE DATOS INTERNOS (NodeData)
@@ -26,12 +28,16 @@ public interface TraceabilityMapper {
     @Mapping(target = "team", source = "team.description")
     @Mapping(target = "shift", source = "shift.description")
     @Mapping(target = "quantity", expression = "java(entity.getQuantity() + \" un.\")")
-    @Mapping(target = "logisticUnit", expression = "java(entity.getLogisticUnit() != null ? String.valueOf(entity.getLogisticUnit()) : \"N/A\")")
+
+    // --- CAMBIO AQUÍ ---
+    // Usamos 'source' apuntando a la lista nueva y un formateador 'qualifiedByName'
+    @Mapping(target = "logisticUnit", source = "logisticUnits", qualifiedByName = "formatLogisticUnits")
+
     @Mapping(target = "date", source = "startTime", qualifiedByName = "formatDate")
     @Mapping(target = "time", source = "startTime", qualifiedByName = "formatTime")
     TraceabilityNodeDTO.NodeData toNodeData(Tracking entity);
 
-    // LOGICA VISUAL (CSS)
+    // LOGICA VISUAL (CSS) - Se mantiene igual
     @AfterMapping
     default void determineStyle(Tracking source, @MappingTarget TraceabilityNodeDTO target) {
         String phaseName = source.getPhase().getDescription().toUpperCase();
@@ -50,6 +56,29 @@ public interface TraceabilityMapper {
     }
 
     // HELPERS DE FORMATO
+
+    // --- NUEVO HELPER PARA LISTA DE CARROS ---
+    @Named("formatLogisticUnits")
+    default String formatLogisticUnits(List<Long> units) {
+        if (units == null || units.isEmpty()) {
+            return "N/A"; // O "S/ Carro"
+        }
+
+        // OPCIÓN A: Mostrar todos separados por coma (ej: "101, 102, 103")
+        // return units.toString().replace("[", "").replace("]", "");
+
+        // OPCIÓN B (Recomendada): Mostrar con estilo inteligente si son muchos
+        if (units.size() > 3) {
+            // Si hay más de 3, mostramos: "101, 102... (+2)"
+            return units.get(0) + ", " + units.get(1) + "... (+" + (units.size() - 2) + ")";
+        }
+
+        // Si son pocos, los mostramos limpios
+        return units.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(", "));
+    }
+
     @Named("formatDate")
     default String formatDate(LocalDateTime dateTime) {
         return dateTime != null ? dateTime.toLocalDate().toString() : "";
