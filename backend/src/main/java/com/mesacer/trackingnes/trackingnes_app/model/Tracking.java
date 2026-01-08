@@ -50,15 +50,18 @@ public class Tracking {
     private Phase phase;
 
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(
-        name = "tracking_logistic_units", 
-        joinColumns = @JoinColumn(name = "tracking_id")
-    )
+    @CollectionTable(name = "tracking_logistic_units", joinColumns = @JoinColumn(name = "tracking_id"))
     @Column(name = "logistic_unit") // Nombre de la columna del valor
     private List<Long> logisticUnits = new ArrayList<>();
 
     @Column(nullable = false)
     private Integer quantity;
+
+    @Column(name = "quantity_scrap")
+    private Integer quantityScrap = 0;
+
+    @Column(name = "scrap_reason")
+    private String scrapReason;
 
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
@@ -66,20 +69,16 @@ public class Tracking {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
-    // 1. LOS PADRES (De dónde vengo): Inputs
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "tracking_composition", joinColumns = @JoinColumn(name = "id_child"), // YO (el tracking actual)
-            inverseJoinColumns = @JoinColumn(name = "id_parent") // ELLOS (los orígenes)
-    )
+    @OneToMany(mappedBy = "child", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
-    private List<Tracking> sourceTrackings = new ArrayList<>();
+    private List<TrackingComposition> sourceComposition = new ArrayList<>();
 
-    // 2. LOS HIJOS (A dónde fui): Outputs
-    // Esta parte es opcional pero MUY recomendada para trazabilidad hacia adelante
-    // (Forward Traceability)
-    @ManyToMany(mappedBy = "sourceTrackings", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
     @ToString.Exclude
-    private List<Tracking> destinationTrackings = new ArrayList<>();
+    private List<TrackingComposition> destinationComposition = new ArrayList<>();
+
+    @OneToOne(mappedBy = "tracking", fetch = FetchType.LAZY)
+    private TrackingAvailability availability;
 
     @Column(columnDefinition = "TEXT")
     private String comments;
@@ -105,4 +104,13 @@ public class Tracking {
     @LastModifiedBy
     @Column(name = "updated_by")
     private Long updatedBy;
+
+    // Helper para agregar orígenes fácilmente
+    public void addSource(Tracking parent, Integer qtyUsed) {
+        TrackingComposition link = new TrackingComposition();
+        link.setChild(this);
+        link.setParent(parent);
+        link.setQuantityUsed(qtyUsed);
+        this.sourceComposition.add(link);
+    }
 }

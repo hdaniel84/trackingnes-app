@@ -30,6 +30,7 @@ public class TrackingServiceImpl implements TrackingService {
 
     private final TrackingRepository repository;
     private final TrackingMapper mapper;
+    
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -41,9 +42,6 @@ public class TrackingServiceImpl implements TrackingService {
                 logisticUnit, date);
 
         Page<Tracking> pageResult = repository.findAll(spec, pageable);
-
-
-
         return pageResult.map(mapper::toResponseDTO);
     }
 
@@ -59,6 +57,7 @@ public class TrackingServiceImpl implements TrackingService {
     public TrackingResponseDTO create(TrackingRequestDTO request) {
         Tracking entity = mapper.toEntity(request);
 
+        // Relaciones bidireccionales
         if (entity.getParameters() != null) {
             entity.getParameters().forEach(param -> param.setTracking(entity));
         }
@@ -66,25 +65,64 @@ public class TrackingServiceImpl implements TrackingService {
             entity.getRawMaterials().forEach(param -> param.setTracking(entity));
         }
 
-        // Usamos saveAndFlush + refresh
+        // Default Scrap
+        if (entity.getQuantityScrap() == null) {
+            entity.setQuantityScrap(0);
+        }
+
+        // -----------------------------------------------------------
+        // 2. PROCESAR ORÍGENES (Consumo de materia prima con validación)
+        // -----------------------------------------------------------
+        if (request.getSources() != null && !request.getSources().isEmpty()) {
+
+            for (TrackingRequestDTO.SourceItemDTO sourceItem : request.getSources()) {
+
+                // A. Buscar el Lote Padre
+                Tracking parent = repository.findById(sourceItem.getTrackingId())
+                        .orElseThrow(() -> new EntityNotFoundException(
+                                "Origen no encontrado: " + sourceItem.getTrackingId()));
+
+                // B. Calcular Disponibilidad usando la VISTA mapeada
+                // Ya no hacemos cálculos manuales. La entidad 'TrackingAvailability' tiene el dato.
+                
+                Integer available = 0;
+                
+                if (parent.getAvailability() != null) {
+                    available = parent.getAvailability().getRemainingQuantity();
+                } else {
+                    // Fallback por seguridad: Si la vista no cargó (caso raro), el disponible es el total
+                    available = parent.getQuantity(); 
+                }
+
+                // C. Validar si alcanza (Todo en INTEGER)
+                if (sourceItem.getQuantityUsed() > available) {
+                    throw new IllegalArgumentException(
+                            String.format("Stock insuficiente en el lote #%d (%s). Disponible: %d, Solicitado: %d",
+                                    parent.getId(), 
+                                    parent.getProduct().getDescription(), 
+                                    available,
+                                    sourceItem.getQuantityUsed()));
+                }
+
+                // D. Agregar la relación (Usando Integer)
+                entity.addSource(parent, sourceItem.getQuantityUsed());
+            }
+        }
+
         Tracking saved = repository.saveAndFlush(entity);
-        entityManager.refresh(saved);
+        entityManager.refresh(saved); // Refrescamos para traer IDs y datos calculados
 
         return mapper.toResponseDTO(saved);
     }
 
     @Override
-    @Transactional // Escritura
+    @Transactional
     public TrackingResponseDTO update(Long id, TrackingRequestDTO request) {
-        // 1. Buscar
         Tracking existingEntity = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Tracking não encontrado: " + id));
 
-        // 2. MapStruct actualiza los campos (Aquí se crean los objetos huecos con
-        // description=null)
         mapper.updateEntityFromDto(request, existingEntity);
 
-        // 3. Relación bidireccional (Parámetros)
         if (existingEntity.getParameters() != null) {
             existingEntity.getParameters().forEach(param -> param.setTracking(existingEntity));
         }
@@ -92,16 +130,11 @@ public class TrackingServiceImpl implements TrackingService {
             existingEntity.getRawMaterials().forEach(param -> param.setTracking(existingEntity));
         }
 
-        // 4. GUARDADO Y REFRESCO (LA SOLUCIÓN)
+        // NOTA: Si permites editar 'Sources' en update, deberías replicar la lógica de validación de stock aquí.
+        // Por ahora, asumimos que 'mapper.updateEntityFromDto' maneja los campos simples.
 
-        // A. Guardamos y hacemos FLUSH inmediato para que los cambios vayan a la BD
         Tracking saved = repository.saveAndFlush(existingEntity);
-
-        // B. Forzamos a Hibernate a RELEER la entidad desde la BD.
-        // Esto llenará los campos 'description' de Team, Product, etc.
         entityManager.refresh(saved);
-
-        // 5. Convertir a DTO (Ahora saved ya tiene las descripciones completas)
         return mapper.toResponseDTO(saved);
     }
 
@@ -118,8 +151,6 @@ public class TrackingServiceImpl implements TrackingService {
     @Transactional(readOnly = true)
     public List<TrackingResponseDTO> findCandidates(List<Long> phaseIds, String referenceId, String filterType) {
         var limit = PageRequest.of(0, 100);
-
-        // Por defecto usamos PRODUCT_CODE si no especifican, o lo que venga
         String type = (filterType != null) ? filterType : "PRODUCT_CODE";
 
         Long refProductId = null;
@@ -128,17 +159,15 @@ public class TrackingServiceImpl implements TrackingService {
         if (referenceId != null && !referenceId.isBlank()) {
             switch (type) {
                 case "PRODUCT_ID":
-                case "SHAPE_ID": // Si fuera numérico
+                case "SHAPE_ID":
                     try {
                         refProductId = Long.parseLong(referenceId);
                     } catch (NumberFormatException e) {
                         return List.of();
                     }
                     break;
-
-                case "PRODUCT_CODE": // CASO TEXTO (Vidragem)
+                case "PRODUCT_CODE":
                 case "SHAPE":
-                    // Aquí pasamos "W099" directamente
                     refShapeId = referenceId;
                     break;
             }
@@ -149,5 +178,4 @@ public class TrackingServiceImpl implements TrackingService {
                 .map(mapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
-
 }

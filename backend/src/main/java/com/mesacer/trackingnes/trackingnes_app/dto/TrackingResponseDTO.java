@@ -17,10 +17,11 @@ public class TrackingResponseDTO {
 
     private List<Long> logisticUnits;
     private Integer quantity;
+    private Integer remainingQuantity;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
-    private List<TrackingSourceSummaryDTO> sourceTrackings;
+    private List<SourceSummaryDTO> sources;
 
     // Audit fields (Solo lectura)
     private LocalDateTime createdDate;
@@ -33,10 +34,12 @@ public class TrackingResponseDTO {
 
     private List<TrackingRawMaterialResponseDTO> rawMaterials;
 
+    // Clase interna para resumir la composición sin exponer Entidades JPA
     @Data
-    public static class TrackingSourceSummaryDTO {
-        private Long id;
-        private List<Long> logisticUnits;
+    public static class SourceSummaryDTO {
+        private Long trackingId; 
+        private Double quantityUsed; 
         private String productDescription;
     }
+
 }

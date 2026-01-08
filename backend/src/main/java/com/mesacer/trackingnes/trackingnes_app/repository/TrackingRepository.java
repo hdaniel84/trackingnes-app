@@ -18,17 +18,22 @@ public interface TrackingRepository extends JpaRepository<Tracking, Long>, JpaSp
     List<Tracking> findTop100ByPhaseIdOrderByStartTimeDesc(Long phaseId);
 
     // --- QUERY CANDIDATES (JPQL) ---
-    // Esta query NO necesita cambios estructurales porque JPA ya sabe mapear la
-    // entidad.
-    @Query("SELECT t FROM Tracking t WHERE t.phase.id IN :phaseIds " +
-            "AND (" +
-            "(:filterType IS NULL) OR " +
-            "(:filterType = 'PRODUCT_ID' AND t.product.id = :refProductId) OR " +
-            "(:filterType = 'SHAPE' AND t.product.shape.id = :refShapeId) OR " +
-            "(:filterType = 'PRODUCT_CODE' AND t.product.productCode = :refShapeId)" +
-            ") " +
-            "ORDER BY t.startTime DESC")
-    List<Tracking> findCandidates(@Param("phaseIds") List<Long> phaseIds,
+    @Query("""
+                SELECT t
+                FROM Tracking t
+                JOIN t.availability a
+                WHERE t.phase.id IN :phaseIds
+                AND a.remainingQuantity > 0
+                AND (
+                    (:filterType IS NULL) OR
+                    (:filterType = 'PRODUCT_ID' AND t.product.id = :refProductId) OR
+                    (:filterType = 'SHAPE' AND t.product.shape.id = :refShapeId) OR
+                    (:filterType = 'PRODUCT_CODE' AND t.product.productCode = :refShapeId)
+                )
+                ORDER BY t.startTime DESC
+            """)
+    List<Tracking> findCandidates(
+            @Param("phaseIds") List<Long> phaseIds,
             @Param("refProductId") Long refProductId,
             @Param("refShapeId") String refShapeId,
             @Param("filterType") String filterType,
@@ -77,5 +82,10 @@ public interface TrackingRepository extends JpaRepository<Tracking, Long>, JpaSp
                 SELECT DISTINCT id_child FROM forward_trace
             """, nativeQuery = true)
     List<Long> findDescendantIds(@Param("trackingId") Long trackingId);
+
+    // CALCULAR CONSUMO TOTAL DE UN LOTE PADRE
+    // Suma todo lo que se ha usado de este padre en cualquier hijo
+    @Query("SELECT COALESCE(SUM(tc.quantityUsed), 0) FROM TrackingComposition tc WHERE tc.parent.id = :parentId")
+    Double getUsedQuantityByParent(@Param("parentId") Long parentId);
 
 }

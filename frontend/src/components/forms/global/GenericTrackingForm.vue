@@ -23,13 +23,12 @@ import EquipmentsSelect from '@/components/forms/global/EquipmentsSelect.vue';
 import ParametersForm from '@/components/forms/global/ParametersForm.vue';
 import RawMaterialsForm from '@/components/forms/global/RawMaterialsForm.vue';
 import AuxiliaryEquipmentsSelect from '@/components/forms/global/AuxiliaryEquipmentsSelect.vue';
-import TrackingSourceSelect from '@/components/forms/global/TrackingSourceSelect.vue';
 import TrackingSuccessDialog from '@/components/forms/tracking/TrackingSuccessDialog.vue';
-
+import TrackingSourceManager from '@/components/forms/global/TrackingSourceManager.vue';
 const props = defineProps({
   item: Object,
   mode: { type: String, default: 'create' },
-  validationSchema: { type: Object, required: true }, // Schema Zod Inyectado
+  validationSchema: { type: Object, required: true },
 });
 
 const emit = defineEmits(['success', 'cancel']);
@@ -71,8 +70,11 @@ const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta, values: 
     rawMaterials: [{ id: null, rawMaterialId: null, value: '' }],
     parameters: [],
     auxiliaryEquipmentIds: [],
-    sourceTrackingIds: [],
-    logisticUnits: []
+    sources: [],
+    quantity: null,
+    quantityScrap: null,
+    scrapReason: ''
+    //logisticUnits: []
   }
 });
 
@@ -185,10 +187,10 @@ const injectMandatoryParameters = async () => {
   }
 };
 
-// Definición de campos (para v-model manual si es necesario)
+// Definición de campos
 const { value: product } = useField('product');
-const { value: sourceTrackingIds } = useField('sourceTrackingIds');
-const { value: logisticUnits } = useField('logisticUnits');
+const { value: sources } = useField('sources');
+//const { value: logisticUnits } = useField('logisticUnits');
 const { value: startTime } = useField('startTime');
 const { value: endTime } = useField('endTime');
 const { value: comments } = useField('comments');
@@ -196,6 +198,8 @@ const { value: team } = useField('team');
 const { value: shift } = useField('shift');
 const { value: equipment } = useField('equipment');
 const { value: quantity } = useField('quantity');
+const { value: quantityScrap } = useField('quantityScrap');
+const { value: scrapReason } = useField('scrapReason');
 const { value: parameters } = useField('parameters');
 const { value: rawMaterials } = useField('rawMaterials');
 const { value: auxiliaryEquipmentIds } = useField('auxiliaryEquipmentIds');
@@ -214,7 +218,7 @@ const targetReferenceId = computed(() => {
 // Watcher para resetear si cambia producto padre
 watch(product, (newVal, oldVal) => {
   if (oldVal && newVal?.id !== oldVal?.id) {
-    sourceTrackingIds.value = []; // Reset array
+    sources.value = []; // Reset
     initialSourceItems.value = [];
   }
 });
@@ -222,16 +226,23 @@ watch(product, (newVal, oldVal) => {
 // 5. CARGA DE DATOS (EDICIÓN)
 watch(() => props.item, async (val) => {
   if (val) {
-    const sourceIds = (val.sourceTrackings || []).map(s => s.id);
-    initialSourceItems.value = val.sourceTrackings || [];
+    const incomingSources = val.sources || [];
+    initialSourceItems.value = incomingSources;
+    // Preparamos el valor del formulario (lo que valida Zod)
+    const formSources = incomingSources.map(s => ({
+      trackingId: s.trackingId,
+      quantityUsed: s.quantityUsed
+    }));
 
     setValues({
-      sourceTrackingIds: sourceIds,
-      logisticUnits: val.logisticUnits || [],
+      sources: formSources,
+      //logisticUnits: val.logisticUnits || [],
       startTime: new Date(val.startTime),
       endTime: val.endTime ? new Date(val.endTime) : null,
       comments: val.comments,
       quantity: val.quantity,
+      quantityScrap: val.quantityScrap,
+      scrapReason: val.scrapReason || '',
       product: val.product || null,
       team: val.team || null,
       shift: val.shift || null,
@@ -291,8 +302,8 @@ const onSubmit = handleSubmit(async (values) => {
 
     const payload = {
       // Campos directos
-      phaseId: phaseId.value, // 🚀 ID automático desde el contexto
-      logisticUnits: values.logisticUnits,
+      phaseId: phaseId.value,
+      //logisticUnits: values.logisticUnits,
       startTime: values.startTime,
       endTime: values.endTime,
       comments: values.comments,
@@ -302,7 +313,9 @@ const onSubmit = handleSubmit(async (values) => {
       shiftId: values.shift?.id,
       equipmentId: values.equipment?.id,
       auxiliaryEquipmentIds: values.auxiliaryEquipmentIds,
-      sourceTrackingIds: values.sourceTrackingIds,
+      sources: values.sources,
+      quantityScrap: values.quantityScrap,
+      scrapReason: values.quantityScrap > 0 ? values.scrapReason : null,
       // Arrays
       rawMaterials: rawMaterialsPayload,
       parameters: parametersPayload
@@ -325,11 +338,13 @@ const onSubmit = handleSubmit(async (values) => {
           rawMaterials: values.rawMaterials, // Conserva MPs configuradas
           auxiliaryEquipmentIds: values.auxiliaryEquipmentIds,
           // Limpia variables
-          logisticUnits: [],
+          //logisticUnits: [],
           quantity: null,
           comments: null,
           endTime: null,
-          sourceTrackingIds: []
+          sources: [],
+          quantityScrap: null,
+          scrapReason: ''
         }
       });
       // Forzar mostrar select de nuevo en create loop
@@ -346,6 +361,56 @@ const onSubmit = handleSubmit(async (values) => {
     notifyError('Erro', message);
     showErrorDialog(err);
   }
+});
+
+
+//Validaciones de cantidades usadas vs. poducidas
+// 1. CALCULO DE TOTALES
+const totalProduced = computed(() => {
+  const ok = quantity.value || 0;
+  const nok = quantityScrap.value || 0;
+  return ok + nok;
+});
+
+const totalInput = computed(() => {
+  // Sumamos el quantityUsed de cada lote de origen seleccionado
+  return (sources.value || []).reduce((acc, item) => acc + (Number(item.quantityUsed) || 0), 0);
+});
+
+// 2. ESTADO DEL BALANCE DE MASAS
+const massBalanceAlert = computed(() => {
+  // Solo calculamos si hay orígenes habilitados y seleccionados
+  if (!showTrackingSource.value || totalInput.value <= 0) return null;
+
+  const diff = totalProduced.value - totalInput.value;
+
+  // CASO ROJO: Salida mayor que Entrada (Error)
+  if (diff > 0) {
+    return {
+      severity: 'error',
+      icon: 'pi pi-exclamation-triangle',
+      title: 'Inconsistência',
+      message: `A produção (${totalProduced.value}) excede a entrada (${totalInput.value}) em ${diff} un.`
+    };
+  }
+
+  // CASO VERDE: Balance Exacto (0 pérdidas)
+  if (diff === 0) {
+    return {
+      severity: 'success', // Nuevo estado
+      icon: 'pi pi-check-circle',
+      title: 'Balanço Perfeito',
+      message: `Entrada e saída coincidem (${totalInput.value} un).`
+    };
+  }
+
+  // CASO GRIS: Salida menor que entrada (Merma técnica)
+  return {
+    severity: 'secondary',
+    icon: 'pi pi-info-circle',
+    title: 'Perda Técnica',
+    message: `Consumo: ${totalInput.value} | Perda: ${Math.abs(diff)} un.`
+  };
 });
 
 </script>
@@ -375,20 +440,16 @@ const onSubmit = handleSubmit(async (values) => {
             </small>
           </div>
 
-          <div v-if="showTrackingSource" class="col-span-12 md:col-span-6">
-            <TrackingSourceSelect v-model="sourceTrackingIds" :initial-selection="initialSourceItems"
+          <div v-if="showTrackingSource" class="col-span-12">
+            <TrackingSourceManager v-model="sources" :initial-data="initialSourceItems"
               :allowedPhases="currentRules.allowedSourcePhases" :target-reference-id="targetReferenceId"
               :match-reference="currentRules.matchReference" :filter-type="currentRules.filterType"
-              label="Origens (Fase Anterior)" :disabled="!product" />
-
-            <small v-if="errors.sourceTrackingIds" class="text-red-500 mt-1 text-xs">
-              {{ errors.sourceTrackingIds }}
-            </small>
-            <small v-if="!product" class="text-surface-400 italic text-xs block mt-1">
-              * Selecione o produto primeiro
-            </small>
+              :disabled="!product" />
+            <small v-if="errors.sources" class="text-red-500 mt-1 text-xs">{{ errors.sources }}</small>
           </div>
-          
+
+
+          <!--
           <div class="col-span-6 md:col-span-3">
              <LogisticUnitsInput 
                 v-model="logisticUnits"
@@ -396,13 +457,92 @@ const onSubmit = handleSubmit(async (values) => {
                 :error-message="errors.logisticUnits"
              />
           </div>
+          -->
 
-          <div class="col-span-6 md:col-span-3">
-            <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Quantidade</label>
-            <InputNumber v-model="quantity" :useGrouping="false" fluid class="w-full" placeholder="Ex: 360"
-              suffix=" un." />
-            <small v-if="errors.quantity" class="text-red-500 mt-1 text-xs">{{ errors.quantity }}</small>
+          <div class="col-span-12 md:col-span-12">
+            <div
+              class="bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-700 rounded-xl p-4 shadow-sm h-full flex flex-col">
+
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-surface-500 uppercase tracking-wider flex items-center gap-2">
+                  <i class="pi pi-chart-bar"></i> Resultados da Produção
+                </span>
+              </div>
+
+              <div class="grid grid-cols-3 gap-4 mb-4">
+
+                <div class="col-span-1">
+                  <label class="block text-[10px] uppercase font-bold text-green-600 mb-1.5 ml-1">
+                    <i class="pi pi-check-circle"></i> Qtd. OK (Boa)
+                  </label>
+                  <InputNumber v-model="quantity" fluid :useGrouping="false" placeholder="0" suffix=" un."
+                    inputClass="font-bold text-green-700 dark:text-green-400" class="w-full" />
+                </div>
+
+                <div class="col-span-1">
+                  <label class="block text-[10px] uppercase font-bold text-red-500 mb-1.5 ml-1">
+                    <i class="pi pi-times-circle"></i> NOK (Quebras)
+                  </label>
+                  <InputNumber v-model="quantityScrap" fluid :useGrouping="false" placeholder="0" suffix=" un."
+                    inputClass="text-red-600 dark:text-red-400 font-bold" class="w-full" />
+                </div>
+                <div class="col-span-1">
+                  <label class="block text-[10px] uppercase font-bold  mb-1.5 ml-1">
+                    <i class="pi pi-chart-pie"></i> Total
+                  </label>
+                  <InputNumber v-model="totalProduced" fluid :useGrouping="false" placeholder="0" suffix=" un." disabled
+                    inputClass="text-red-600 dark:text-red-400 font-bold" class="w-full" />
+                </div>
+              </div>
+
+              <div v-if="errors.quantity" class="-mt-2 mb-2">
+                <small class="text-red-500 text-[10px] flex items-center gap-1">
+                  <i class="pi pi-exclamation-triangle"></i> {{ errors.quantity }}
+                </small>
+              </div>
+
+              <div class="mt-auto">
+                <div v-if="massBalanceAlert"
+                  class="text-xs p-2.5 rounded-lg border flex items-start gap-3 transition-all duration-300" :class="{
+                    // ROJO (Error)
+                    'bg-red-50 border-red-100 text-red-800 dark:bg-red-900/10 dark:border-red-800/50 dark:text-red-300': massBalanceAlert.severity === 'error',
+
+                    // VERDE (Éxito / Exacto)
+                    'bg-green-50 border-green-100 text-green-800 dark:bg-green-900/10 dark:border-green-800/50 dark:text-green-300': massBalanceAlert.severity === 'success',
+
+                    // GRIS (Info / Merma)
+                    'bg-surface-50 border-surface-100 text-surface-600 dark:bg-surface-800 dark:border-surface-700/50 dark:text-surface-400': massBalanceAlert.severity === 'secondary'
+                  }">
+
+                  <div
+                    class="shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-white/50 dark:bg-black/20">
+                    <i :class="massBalanceAlert.icon" class="text-xs"></i>
+                  </div>
+
+                  <div class="flex flex-col">
+                    <span class="font-bold uppercase text-[9px] tracking-wider mb-0.5 opacity-80">
+                      {{ massBalanceAlert.title }}
+                    </span>
+                    <span class="text-[11px] font-medium leading-tight">
+                      {{ massBalanceAlert.message }}
+                    </span>
+                  </div>
+                </div>
+
+                <div v-else
+                  class="h-[50px] border border-dashed border-surface-100 dark:border-surface-800 rounded-lg flex items-center justify-center text-surface-300 text-[10px] italic">
+                  Aguardando dados de entrada...
+                </div>
+              </div>
+
+            </div>
           </div>
+
+          <div v-if="quantityScrap > 0" class="col-span-12">
+            <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Motivo do Descarte</label>
+            <Textarea v-model="scrapReason" rows="1" autoResize class="w-full" placeholder="Ex: Quebrado, Sujo..." />
+          </div>
+
         </div>
       </div>
 

@@ -21,13 +21,24 @@ const dateValidationOptions = {
 // --- 2. BASE OBJECT (La estructura común) ---
 // Nota: No lo exportamos directamente porque le falta la validación de fechas
 const trackingBaseObject = z.object({
+  /*
   logisticUnits: z.array(z.number())
     .min(1, 'É obrigatório indicar pelo menos uma unidade logística (Carro/Vagão)'),
+*/
+  // 2. Orígenes (Array de Objetos con cantidad)
+  sources: z.array(
+    z.object({
+      trackingId: z.number(),
+      quantityUsed: z.number({
+        required_error: "Indique a quantidade",
+        invalid_type_error: "Indique uma quantidade"
+      }).min(0.01, 'A quantidade usada deve ser maior que 0')
+    })
+  ).min(1, 'Selecione pelo menos um lote de origem'),
 
-  sourceTrackingIds: z.array(z.number(), {
-    required_error: 'É obrigatório selecionar pelo menos um lote de origem',
-    invalid_type_error: 'Origem inválida'
-  }).min(1, 'É obrigatório selecionar pelo menos um lote de origem'),
+  // 3. Cantidades
+  quantityScrap: z.number().optional().default(0),
+  scrapReason: z.string().optional().nullable(),
 
   quantity: z
     .number({
@@ -131,30 +142,21 @@ export const trackingSchema = trackingBaseObject.refine(
 
 /****************************************************
  * Esquemas (Heredados)
- * 1. Extiende la base agregando trackingSourceId.
- * 2. Aplica la validación de fechas al final.
- * Usado para Vidragem, Forno
  */
 
 export const trackingPrensasFormSchema = trackingBaseObject
-  .omit({
-    sourceTrackingIds: true,
-  })
+  .omit({ sources: true })
   .refine(dateValidation, dateValidationOptions);
 
 export const trackingVidragemFormSchema = trackingBaseObject
   .refine(dateValidation, dateValidationOptions);
 
 export const trackingFornoFormSchema = trackingBaseObject
-  .omit({
-    rawMaterials: true,
-  })
+  .omit({ rawMaterials: true })
   .refine(dateValidation, dateValidationOptions);
 
 export const trackingEscolhaFormSchema = trackingBaseObject
-  .omit({
-    rawMaterials: true,
-  })
+  .omit({ rawMaterials: true })
   .refine(dateValidation, dateValidationOptions);
 
 export const trackingEmbalagemFormSchema = trackingBaseObject

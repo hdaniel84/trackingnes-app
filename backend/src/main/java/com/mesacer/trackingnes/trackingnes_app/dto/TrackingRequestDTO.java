@@ -10,7 +10,8 @@ import java.util.List;
 @Data
 public class TrackingRequestDTO {
 
-    // Opcional: Puede ir nulo en creación, obligatorio en actualización (o manejado por PathVariable)
+    // Opcional: Puede ir nulo en creación, obligatorio en actualización (o manejado
+    // por PathVariable)
     private Long id;
 
     @NotNull(message = "El ID del equipo es obligatorio")
@@ -34,6 +35,8 @@ public class TrackingRequestDTO {
     @NotNull(message = "La cantidad es obligatoria")
     @Positive(message = "La cantidad debe ser mayor que cero")
     private Integer quantity;
+    private Integer quantityScrap; // Quebras
+    private String scrapReason;  
 
     @NotNull(message = "El startTime es obligatorio")
     private LocalDateTime startTime;
@@ -42,7 +45,13 @@ public class TrackingRequestDTO {
 
     private Long rawMaterialId;
 
-    private List<Long> sourceTrackingIds;
+    private List<SourceItemDTO> sources;
+
+    @Data
+    public static class SourceItemDTO {
+        private Long trackingId; // ID del padre
+        private Integer quantityUsed;
+    }
 
     @Size(max = 5000, message = "Los comentarios no pueden superar 5000 caracteres")
     private String comments;
