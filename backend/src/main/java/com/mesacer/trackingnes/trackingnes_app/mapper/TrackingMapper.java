@@ -11,7 +11,8 @@ import org.mapstruct.*;
         TrackingParameterMapper.class,
         TrackingRawMaterialMapper.class,
         TeamMapper.class,
-        EntityReferenceMapper.class
+        EntityReferenceMapper.class,
+        ProductMapper.class
 })
 public interface TrackingMapper {
 
@@ -49,6 +50,7 @@ public interface TrackingMapper {
     @Mapping(target = "trackingId", source = "parent.id")
     @Mapping(target = "quantityUsed", source = "quantityUsed")
     @Mapping(target = "productDescription", source = "parent.product.description")
+    @Mapping(target = "remainingQuantity", source = "parent.availability.remainingQuantity")
     TrackingResponseDTO.SourceSummaryDTO toSourceSummary(TrackingComposition composition);
 
     // --- HELPER EXISTENTE: Long -> Entity (Referencia) ---

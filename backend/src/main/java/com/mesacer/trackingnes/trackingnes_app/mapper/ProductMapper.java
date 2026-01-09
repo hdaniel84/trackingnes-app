@@ -22,8 +22,7 @@ public interface ProductMapper {
     @Mapping(source = "decorationId", target = "decoration.id")
     Product toEntity(ProductDTO dto);
 
-    // 🚀 NUEVO MÉTODO ESPECÍFICO
-    @Mapping(source = "productCode", target = "productCode") // Si en Entidad es 'productCode' y en DTO es 'code'
-    @Mapping(source = "shape.id", target = "shapeId") // Mapeo anidado automático
+    @Mapping(source = "productCode", target = "productCode") 
+    @Mapping(source = "shape.id", target = "shapeId") 
     ProductSelectDTO toSelectDTO(Product entity);
 }

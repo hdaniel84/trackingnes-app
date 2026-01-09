@@ -23,8 +23,6 @@ const dialogIcon = computed(() => {
         default: return 'pi pi-info-circle text-gray-500';
     }
 });
-
-
 </script>
 
 <template>

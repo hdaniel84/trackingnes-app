@@ -6,7 +6,9 @@ const errorDialogDetails = ref([]);
 const errorDialogType = ref('info'); // nuevo campo
 
 export function useErrorDialog() {
+  
   const showErrorDialog = (backendError, type = 'error') => {
+
     if (!backendError) return;
 
     errorDialogMessage.value = backendError.message || 'Erro inesperado';

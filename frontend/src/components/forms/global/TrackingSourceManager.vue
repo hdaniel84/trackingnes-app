@@ -1,10 +1,10 @@
+<!-- TrackingSourceManager.vue -->
 <script setup>
 import { ref, watch } from 'vue';
 import TrackingSourceSelect from './TrackingSourceSelect.vue';
 import InputNumber from 'primevue/inputnumber';
 import Button from 'primevue/button';
 
-// ... (PROPS, EMITS Y LÓGICA DE SCRIPT EXACTAMENTE IGUAL) ...
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },
   allowedPhases: Array,
@@ -14,41 +14,9 @@ const props = defineProps({
   disabled: Boolean,
   initialData: { type: Array, default: () => [] }
 });
-
+console.log(props.initialData);
 const emit = defineEmits(['update:modelValue']);
 const rows = ref([]);
-
-const onSourceAdded = (sourceObj) => {
-  if (rows.value.some(r => r.trackingId === sourceObj.id)) return;
-  const newItem = {
-    trackingId: sourceObj.id,
-    quantityUsed: null,
-    productDesc: sourceObj.product?.description,
-    logisticUnits: sourceObj.logisticUnits || [],
-    available: (sourceObj.remainingQuantity !== undefined && sourceObj.remainingQuantity !== null)
-      ? sourceObj.remainingQuantity : sourceObj.quantity
-  };
-  rows.value.unshift(newItem); // TRUCO UX: Agregamos al PRINCIPIO (unshift) para verlo rápido
-  emitUpdate();
-};
-
-watch(() => props.initialData, (val) => {
-  if (val && val.length > 0) {
-    rows.value = val.map(item => ({
-      trackingId: item.trackingId || item.id,
-      quantityUsed: item.quantityUsed,
-      productDesc: item.productDescription || item.product?.description,
-      logisticUnits: item.logisticUnits,
-      available: item.quantity || 999999
-    }));
-    emitUpdate();
-  } else { rows.value = []; }
-}, { immediate: true });
-
-const removeRow = (index) => {
-  rows.value.splice(index, 1);
-  emitUpdate();
-};
 
 const emitUpdate = () => {
   const cleanPayload = rows.value.map(r => ({
@@ -56,6 +24,51 @@ const emitUpdate = () => {
     quantityUsed: r.quantityUsed
   }));
   emit('update:modelValue', cleanPayload);
+};
+
+const onSourceAdded = (sourceObj) => {
+  if (rows.value.some(r => r.trackingId === sourceObj.id)) return;
+  const newItem = {
+    trackingId: sourceObj.id,
+    quantityUsed: null,
+    productDesc: sourceObj.product?.description,
+    available: (sourceObj.remainingQuantity !== undefined && sourceObj.remainingQuantity !== null)
+      ? sourceObj.remainingQuantity : sourceObj.quantity
+  };
+  rows.value.unshift(newItem);
+};
+
+watch(() => props.initialData, (val) => {
+  if (val && val.length > 0) {
+    rows.value = val.map(item => {
+
+      // A. Obtenemos el stock remanente que reporta la base de datos
+      // (Si es null, asumimos 0, pero idealmente el DTO nuevo ya lo trae)
+      const dbRemaining = (item.remainingQuantity !== undefined && item.remainingQuantity !== null)
+        ? item.remainingQuantity : 0; 
+
+      // B. Obtenemos lo que este registro YA está consumiendo actualmente
+      const currentUsage = item.quantityUsed || 0;
+      const realAvailable = dbRemaining + currentUsage;
+
+      return {
+        trackingId: item.trackingId || item.id,
+        quantityUsed: item.quantityUsed,
+        productDesc: item.productDescription || item.product?.description,
+        available: realAvailable
+      };
+    });
+
+    // Importante: Emitimos para que el padre sepa que hay datos cargados
+    emitUpdate();
+  } else {
+    rows.value = [];
+  }
+}, { immediate: true });
+
+const removeRow = (index) => {
+  rows.value.splice(index, 1);
+  emitUpdate();
 };
 </script>
 
@@ -77,7 +90,7 @@ const emitUpdate = () => {
 
           <div class="mt-2 text-[10px] text-surface-400 leading-tight">
             <i class="pi pi-info-circle mr-1"></i>
-            Selecione primeiro produto  de saída
+            Selecione primeiro produto de saída
           </div>
         </div>
       </div>
@@ -104,22 +117,14 @@ const emitUpdate = () => {
 
                 <div class="flex items-center gap-2 mt-0.5">
                   <span class="text-[10px] text-surface-500 bg-surface-50 px-1 rounded border border-surface-100">
-                    Disp: <strong class="text-green-600">{{ row.available }}</strong>
+                    Qtd. Disp: <strong class="text-green-600">{{ row.available }}</strong>
                   </span>
-
-                  <div v-if="row.logisticUnits && row.logisticUnits.length" class="flex gap-1 overflow-hidden">
-                    <span v-for="u in row.logisticUnits.slice(0, 3)" :key="u"
-                      class="text-[9px] font-mono text-surface-500">
-                      #{{ u }}
-                    </span>
-                    <span v-if="row.logisticUnits.length > 3" class="text-[9px] text-surface-400">...</span>
-                  </div>
                 </div>
               </div>
 
               <div class="w-24 shrink-0 flex flex-col">
                 <InputNumber v-model="row.quantityUsed" @update:modelValue="emitUpdate" @blur="emitUpdate"
-                  :max="row.available" placeholder="Qtd" size="small" inputClass="text-right font-bold text-sm"
+                  :max="row.available" placeholder="Qtd usado" size="small" inputClass="text-right font-bold text-sm"
                   class="w-full" :class="{ 'p-invalid': !row.quantityUsed && row.quantityUsed !== 0 }" />
               </div>
 

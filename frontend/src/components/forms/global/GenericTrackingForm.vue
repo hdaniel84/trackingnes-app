@@ -1,3 +1,4 @@
+<!-- GenericTrackingForm.vue -->
 <script setup>
 import { useTrackingStore } from '@/stores/trackingStore';
 import { useForm, useField } from 'vee-validate';
@@ -25,6 +26,8 @@ import RawMaterialsForm from '@/components/forms/global/RawMaterialsForm.vue';
 import AuxiliaryEquipmentsSelect from '@/components/forms/global/AuxiliaryEquipmentsSelect.vue';
 import TrackingSuccessDialog from '@/components/forms/tracking/TrackingSuccessDialog.vue';
 import TrackingSourceManager from '@/components/forms/global/TrackingSourceManager.vue';
+import DialogInfo from '@/components/forms/global/DialogInfo.vue'
+
 const props = defineProps({
   item: Object,
   mode: { type: String, default: 'create' },
@@ -72,8 +75,8 @@ const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta, values: 
     auxiliaryEquipmentIds: [],
     sources: [],
     quantity: null,
-    quantityScrap: null,
-    scrapReason: ''
+    quantityScrap: null
+    //scrapReason: ''
     //logisticUnits: []
   }
 });
@@ -199,7 +202,7 @@ const { value: shift } = useField('shift');
 const { value: equipment } = useField('equipment');
 const { value: quantity } = useField('quantity');
 const { value: quantityScrap } = useField('quantityScrap');
-const { value: scrapReason } = useField('scrapReason');
+//const { value: scrapReason } = useField('scrapReason');
 const { value: parameters } = useField('parameters');
 const { value: rawMaterials } = useField('rawMaterials');
 const { value: auxiliaryEquipmentIds } = useField('auxiliaryEquipmentIds');
@@ -242,7 +245,7 @@ watch(() => props.item, async (val) => {
       comments: val.comments,
       quantity: val.quantity,
       quantityScrap: val.quantityScrap,
-      scrapReason: val.scrapReason || '',
+      //scrapReason: val.scrapReason || '',
       product: val.product || null,
       team: val.team || null,
       shift: val.shift || null,
@@ -315,7 +318,7 @@ const onSubmit = handleSubmit(async (values) => {
       auxiliaryEquipmentIds: values.auxiliaryEquipmentIds,
       sources: values.sources,
       quantityScrap: values.quantityScrap,
-      scrapReason: values.quantityScrap > 0 ? values.scrapReason : null,
+      //scrapReason: values.quantityScrap > 0 ? values.scrapReason : null,
       // Arrays
       rawMaterials: rawMaterialsPayload,
       parameters: parametersPayload
@@ -343,8 +346,8 @@ const onSubmit = handleSubmit(async (values) => {
           comments: null,
           endTime: null,
           sources: [],
-          quantityScrap: null,
-          scrapReason: ''
+          quantityScrap: null
+          //scrapReason: ''
         }
       });
       // Forzar mostrar select de nuevo en create loop
@@ -357,9 +360,8 @@ const onSubmit = handleSubmit(async (values) => {
       emit('success');
     }
   } catch (err) {
-    const message = err?.response?.data?.message || err?.message || 'Erro inesperado';
-    notifyError('Erro', message);
     showErrorDialog(err);
+    notifyError('Erro', err.detail);
   }
 });
 
@@ -504,13 +506,8 @@ const massBalanceAlert = computed(() => {
               <div class="mt-auto">
                 <div v-if="massBalanceAlert"
                   class="text-xs p-2.5 rounded-lg border flex items-start gap-3 transition-all duration-300" :class="{
-                    // ROJO (Error)
                     'bg-red-50 border-red-100 text-red-800 dark:bg-red-900/10 dark:border-red-800/50 dark:text-red-300': massBalanceAlert.severity === 'error',
-
-                    // VERDE (Éxito / Exacto)
                     'bg-green-50 border-green-100 text-green-800 dark:bg-green-900/10 dark:border-green-800/50 dark:text-green-300': massBalanceAlert.severity === 'success',
-
-                    // GRIS (Info / Merma)
                     'bg-surface-50 border-surface-100 text-surface-600 dark:bg-surface-800 dark:border-surface-700/50 dark:text-surface-400': massBalanceAlert.severity === 'secondary'
                   }">
 
@@ -529,7 +526,7 @@ const massBalanceAlert = computed(() => {
                   </div>
                 </div>
 
-                <div v-else
+                <div v-else-if="showTrackingSource"
                   class="h-[50px] border border-dashed border-surface-100 dark:border-surface-800 rounded-lg flex items-center justify-center text-surface-300 text-[10px] italic">
                   Aguardando dados de entrada...
                 </div>
@@ -537,11 +534,12 @@ const massBalanceAlert = computed(() => {
 
             </div>
           </div>
-
+          <!-- POR AHORA NO PEDIR MOTIVO DE QUEBRAS
           <div v-if="quantityScrap > 0" class="col-span-12">
             <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Motivo do Descarte</label>
             <Textarea v-model="scrapReason" rows="1" autoResize class="w-full" placeholder="Ex: Quebrado, Sujo..." />
           </div>
+          -->
 
         </div>
       </div>
@@ -650,6 +648,7 @@ const massBalanceAlert = computed(() => {
       </div>
       <Divider />
       <TrackingSuccessDialog v-model:visible="showSuccessDialog" :trackingId="createdTrackingId" />
+      <DialogInfo/>
     </form>
   </div>
 </template>

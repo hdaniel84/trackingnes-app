@@ -17,6 +17,7 @@ public class TrackingResponseDTO {
 
     private List<Long> logisticUnits;
     private Integer quantity;
+    private Integer quantityScrap;
     private Integer remainingQuantity;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -25,7 +26,7 @@ public class TrackingResponseDTO {
 
     // Audit fields (Solo lectura)
     private LocalDateTime createdDate;
-    private String createdByUsername; // Ojo: A veces es mejor devolver el nombre que el ID
+    private String createdByUsername;
     private LocalDateTime updatedDate;
 
     private String comments;
@@ -38,8 +39,9 @@ public class TrackingResponseDTO {
     @Data
     public static class SourceSummaryDTO {
         private Long trackingId; 
-        private Double quantityUsed; 
         private String productDescription;
+        private Double quantityUsed; 
+        private Integer remainingQuantity;
     }
 
 }
