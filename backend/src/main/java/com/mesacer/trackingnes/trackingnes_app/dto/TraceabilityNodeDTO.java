@@ -23,6 +23,7 @@ public class TraceabilityNodeDTO {
         private String productDesc; // Descripción del producto
         private String productCode; // Código SAP/ERP
         private String quantity;
+        private String quantityScrap;
         private String logisticUnit; // Carro/Palet
         private String date;
         private String time;

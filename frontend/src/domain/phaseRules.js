@@ -18,6 +18,7 @@ export const PHASE_RULES = {
         // Vidragem usa materias primas, así que lo dejamos en false (o undefined)
         hideRawMaterials: false
     },
+    /*
     //Kerajet
     4: {
         productFilter: ['FF'],  //Filtro del select product en la fase (lo que el usuario puede seleccionar)
@@ -31,24 +32,24 @@ export const PHASE_RULES = {
         allowedSourcePhases: [3, 4],
         matchReference: true,
         hideRawMaterials: true
-    },
-    //Forno saida
+    },*/
+    //Forno
     6: {
         productFilter: ['FF'],  //Filtro del select product en la fase (lo que el usuario puede seleccionar)
-        allowedSourcePhases: [5],
+        allowedSourcePhases: [3],
         matchReference: true,
         hideRawMaterials: true
     },
     //Escolha
     7: {
-        productFilter: ['FF','FS','W'],  //Filtro del select product en la fase (lo que el usuario puede seleccionar)
-        allowedSourcePhases: [6, 7],
+        productFilter: ['FF'],  //['FF','FS']Filtro del select product en la fase (lo que el usuario puede seleccionar)
+        allowedSourcePhases: [6],
         matchReference: true,
         hideRawMaterials: true
     },
     //Embalagem
     9: {
-        productFilter: ['FF','FS'],  //Filtro del select product en la fase (lo que el usuario puede seleccionar)
+        productFilter: ['FF'],  //Filtro del select product en la fase (lo que el usuario puede seleccionar)
         allowedSourcePhases: [7],
         matchReference: true
     }

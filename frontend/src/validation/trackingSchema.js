@@ -37,7 +37,7 @@ const trackingBaseObject = z.object({
   ).min(1, 'Selecione pelo menos um lote de origem'),
 
   // 3. Cantidades
-  quantityScrap: z.number().optional().default(0),
+  quantityScrap: z.any().optional().default(0),
   scrapReason: z.string().optional().nullable(),
 
   quantity: z

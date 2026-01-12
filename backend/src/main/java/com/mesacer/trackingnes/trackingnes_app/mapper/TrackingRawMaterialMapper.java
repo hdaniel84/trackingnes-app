@@ -16,6 +16,6 @@ public interface TrackingRawMaterialMapper {
 
     // OUTPUT
     @Mapping(target = "rawMaterialId", source = "rawMaterialType.id")
-    @Mapping(target = "rawaMaterialDescription", source = "rawMaterialType.description") 
+    @Mapping(target = "rawMaterialDescription", source = "rawMaterialType.description") 
     TrackingRawMaterialResponseDTO toResponseDTO(TrackingRawMaterial entity);
 }

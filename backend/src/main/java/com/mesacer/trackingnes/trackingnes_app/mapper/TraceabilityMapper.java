@@ -28,6 +28,8 @@ public interface TraceabilityMapper {
     @Mapping(target = "team", source = "team.description")
     @Mapping(target = "shift", source = "shift.description")
     @Mapping(target = "quantity", expression = "java(entity.getQuantity() + \" un.\")")
+    @Mapping(target = "quantityScrap", expression = "java(entity.getQuantityScrap() + \" un.\")")
+    
 
     // --- CAMBIO AQUÍ ---
     // Usamos 'source' apuntando a la lista nueva y un formateador 'qualifiedByName'

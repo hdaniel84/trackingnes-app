@@ -34,14 +34,14 @@ const model = computed(() => {
                     class: 'rotated-icon',
                     visible: auth.hasPrivilege('READ_VIDRAGEM') || auth.hasPrivilege('WRITE_VIDRAGEM')
                 },
-                //{ label: 'KeraJet', icon: 'pi pi-fw pi-print', to: '/uikit/table' },
+                /*
                 {
                     label: 'Forno Entrada', icon: 'pi pi-fw pi-gauge', to: '/forno-entrada',
                     class: 'rotated-icon',
                     visible: auth.hasPrivilege('READ_FORNO_ENTRADA') || auth.hasPrivilege('WRITE_FORNO_ENTRADA')
-                },
+                },*/
                 {
-                    label: 'Forno Saída', icon: 'pi pi-fw pi-external-link', to: '/forno-saida',
+                    label: 'Forno', icon: 'pi pi-fw pi-external-link', to: '/forno',
                     class: 'rotated-icon',
                     visible: auth.hasPrivilege('READ_FORNO_SAIDA') || auth.hasPrivilege('WRITE_FORNO_SAIDA')
                 },

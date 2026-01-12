@@ -39,6 +39,7 @@ public class TrackingResponseDTO {
     @Data
     public static class SourceSummaryDTO {
         private Long trackingId; 
+        private String productCode;
         private String productDescription;
         private Double quantityUsed; 
         private Integer remainingQuantity;

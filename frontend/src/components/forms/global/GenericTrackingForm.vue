@@ -11,10 +11,13 @@ import { useParameterStore } from '@/stores/parameterStore';
 // Helpers & UI
 import { useNotify } from '@/layout/composables/notify';
 import { useErrorDialog } from '@/layout/composables/errorDialog';
+import { useConfirm } from "primevue/useconfirm"; 
+
 import DatePicker from 'primevue/datepicker';
 import Textarea from 'primevue/textarea';
 import Button from 'primevue/button';
 import Divider from 'primevue/divider';
+import ConfirmDialog from 'primevue/confirmdialog'; 
 
 // Componentes Globales
 import ProductSelect from '@/components/forms/global/ProductSelect.vue';
@@ -26,7 +29,7 @@ import RawMaterialsForm from '@/components/forms/global/RawMaterialsForm.vue';
 import AuxiliaryEquipmentsSelect from '@/components/forms/global/AuxiliaryEquipmentsSelect.vue';
 import TrackingSuccessDialog from '@/components/forms/tracking/TrackingSuccessDialog.vue';
 import TrackingSourceManager from '@/components/forms/global/TrackingSourceManager.vue';
-import DialogInfo from '@/components/forms/global/DialogInfo.vue'
+import DialogInfo from '@/components/forms/global/DialogInfo.vue';
 
 const props = defineProps({
   item: Object,
@@ -36,7 +39,10 @@ const props = defineProps({
 
 const emit = defineEmits(['success', 'cancel']);
 
-// 1. CONTEXTO DINÁMICO (Router & Rules)
+const instanceId = Math.random().toString(36).substring(2, 9); //Generamos ID único para cada form
+const confirmGroup = `trackingForm_${instanceId}`;
+
+// 1. CONTEXTO DINÁMICO
 const { phaseId, currentRules, phaseMetadata } = usePhase();
 const store = useTrackingStore();
 const rawMaterialStore = useRawMaterialStore();
@@ -45,21 +51,20 @@ const showSuccessDialog = ref(false);
 const createdTrackingId = ref(null);
 const { notifySuccess, notifyError } = useNotify();
 const { showErrorDialog } = useErrorDialog();
+const confirm = useConfirm(); 
+
 const errorList = computed(() => {
   return Object.values(errors.value || {});
 });
-
 
 // 2. LOGICA VISUAL CONDICIONAL
 const filterSectionVar = computed(() => phaseMetadata.value?.slug || 'producao');
 const writePermission = computed(() => `WRITE_${phaseMetadata.value?.permissionSuffix || 'ADMIN'}`);
 
-// ¿Mostramos Origem? (Sí, si la fase tiene fases permitidas definidas)
 const showTrackingSource = computed(() => {
   return currentRules.value?.allowedSourcePhases && currentRules.value.allowedSourcePhases.length > 0;
 });
 
-// ¿Mostramos Materias Primas? (Sí, a menos que la regla diga explícitamente ocultarlo, ej: Forno)
 const showRawMaterials = computed(() => {
   return !currentRules.value?.hideRawMaterials;
 });
@@ -68,132 +73,69 @@ const showRawMaterials = computed(() => {
 const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta, values: formValues, submitCount } = useForm({
   validationSchema: toTypedSchema(props.validationSchema),
   validateOnMount: false,
+  validateOnBlur: false,
+  validateOnChange: false,
+  validateOnInput: false,
+  validateOnModelUpdate: false,
+
   initialValues: {
     startTime: new Date(),
     rawMaterials: [{ id: null, rawMaterialId: null, value: '' }],
     parameters: [],
     auxiliaryEquipmentIds: [],
     sources: [],
+    product: null,
     quantity: null,
     quantityScrap: null
-    //scrapReason: ''
-    //logisticUnits: []
   }
 });
 
-//inyeccion de rawMterials mandatory
+// ... (FUNCIONES DE INYECCIÓN DE MATERIAS PRIMAS Y PARÁMETROS) ...
 const injectMandatoryRawMaterials = async () => {
-  // 1. Cargar datos si faltan
-  if (rawMaterialStore.items.length === 0) {
-    await rawMaterialStore.fetchAll();
-  }
-
-  // 2. Filtrar obligatorios de la fase actual
+  if (rawMaterialStore.items.length === 0) await rawMaterialStore.fetchAll();
   const currentPhaseId = Number(phaseId.value);
-  const mandatoryItems = rawMaterialStore.items.filter(rm =>
-    rm.mandatory === true &&
-    rm.phase?.id === currentPhaseId
-  );
-
-  // Si no hay obligatorios, no tocamos nada (se queda la fila vacía si existía)
+  const mandatoryItems = rawMaterialStore.items.filter(rm => rm.mandatory === true && rm.phase?.id === currentPhaseId);
   if (mandatoryItems.length === 0) return;
-
-  // 3. Preparar filas actuales
   let currentRows = formValues.rawMaterials || [];
-
-  // 🚀 FIX: Si la única fila que existe está vacía (default), la marcamos para borrar
-  // Esto evita: [ vacía, obligatoria1, obligatoria2 ]
   const isDefaultEmptyRow = currentRows.length === 1 && !currentRows[0].rawMaterialId && !currentRows[0].value;
-
-  // Si es la fila por defecto, empezamos con un array limpio
   let mergedRows = isDefaultEmptyRow ? [] : [...currentRows];
-  let hasChanges = isDefaultEmptyRow; // Si borramos la fila vacía, ya cuenta como cambio
-
-  // 4. Inyectar obligatorios
+  let hasChanges = isDefaultEmptyRow;
   mandatoryItems.forEach(mandatory => {
-    // Verificamos si ya está en el array que vamos a guardar
     const exists = mergedRows.some(row => row.rawMaterialId === mandatory.id);
-
     if (!exists) {
-      mergedRows.push({
-        id: null,
-        rawMaterialId: mandatory.id,
-        value: ''
-      });
+      mergedRows.push({ id: null, rawMaterialId: mandatory.id, value: '' });
       hasChanges = true;
     }
   });
-
-  // 5. Aplicar cambios al formulario
   if (hasChanges) {
-    resetForm({
-      values: {
-        ...formValues,
-        rawMaterials: mergedRows
-      }
-    });
+    resetForm({ values: { ...formValues, rawMaterials: mergedRows } });
   }
 };
 
-//Inyeccion de parametros:
 const injectMandatoryParameters = async () => {
-  // 1. Cargar catálogo si está vacío
-  if (parameterStore.items.length === 0) {
-    await parameterStore.fetchAll();
-  }
-
+  if (parameterStore.items.length === 0) await parameterStore.fetchAll();
   const currentPhaseId = Number(phaseId.value);
-
-  // 2. Filtrar obligatorios de la fase actual
-  const mandatoryItems = parameterStore.items.filter(p =>
-    p.mandatory === true &&
-    p.phase?.id === currentPhaseId
-  );
-
+  const mandatoryItems = parameterStore.items.filter(p => p.mandatory === true && p.phase?.id === currentPhaseId);
   if (mandatoryItems.length === 0) return;
-
   let currentRows = formValues.parameters || [];
-
-  // 3. Limpiar fila vacía por defecto (si existe y es la única)
   const isDefaultEmptyRow = currentRows.length === 1 && !currentRows[0].parameterId;
-
   let mergedRows = isDefaultEmptyRow ? [] : [...currentRows];
   let hasChanges = isDefaultEmptyRow;
-
-  // 4. Fusionar
   mandatoryItems.forEach(mandatory => {
-    // Verificamos si ya existe en el array
     const exists = mergedRows.some(row => row.parameterId === mandatory.id);
-
     if (!exists) {
-      // Agregamos con la estructura completa del DTO inicializada en null
-      mergedRows.push({
-        id: null,
-        parameterId: mandatory.id,
-        valueString: '',
-        valueNumber: null,
-        valueBool: null,
-        valueDate: null
-      });
+      mergedRows.push({ id: null, parameterId: mandatory.id, valueString: '', valueNumber: null, valueBool: null, valueDate: null });
       hasChanges = true;
     }
   });
-
-  // 5. Aplicar cambios
   if (hasChanges) {
-    resetForm({
-      values: {
-        ...formValues, // Mantenemos lo que el usuario ya haya escrito en otros campos
-        parameters: mergedRows
-      }
-    });
+    resetForm({ values: { ...formValues, parameters: mergedRows } });
   }
 };
 
 // Definición de campos
 const { value: product } = useField('product');
 const { value: sources } = useField('sources');
-//const { value: logisticUnits } = useField('logisticUnits');
 const { value: startTime } = useField('startTime');
 const { value: endTime } = useField('endTime');
 const { value: comments } = useField('comments');
@@ -202,111 +144,107 @@ const { value: shift } = useField('shift');
 const { value: equipment } = useField('equipment');
 const { value: quantity } = useField('quantity');
 const { value: quantityScrap } = useField('quantityScrap');
-//const { value: scrapReason } = useField('scrapReason');
 const { value: parameters } = useField('parameters');
 const { value: rawMaterials } = useField('rawMaterials');
 const { value: auxiliaryEquipmentIds } = useField('auxiliaryEquipmentIds');
 
-// 4. LÓGICA DE ORIGEN (Tarjeta vs Select)
-//const currentSourceDetails = ref(null);
+// 4. LÓGICA DE ORIGEN
 const initialSourceItems = ref([]);
 const showSourceSelect = ref(true);
+const isLoadingData = ref(false); // Bandera para proteger carga
 
-// Calculamos el ID de referencia para el filtro (ej: ShapeId o ProductCode)
 const targetReferenceId = computed(() => {
-  if (currentRules.value?.filterType === 'PRODUCT_CODE') return product.value?.shapeId;
-  return product.value?.id || null;
+  const p = product.value;
+  if (!p) return null;
+  const filterType = currentRules.value?.filterType;
+  if (filterType === 'PRODUCT_CODE' || filterType === 'SHAPE') {
+    return p.shapeId || p.shape?.id || p.productCode;
+  }
+  return p.id;
 });
 
-// Watcher para resetear si cambia producto padre
 watch(product, (newVal, oldVal) => {
+  if (isLoadingData.value) return;
   if (oldVal && newVal?.id !== oldVal?.id) {
-    sources.value = []; // Reset
+    sources.value = [];
     initialSourceItems.value = [];
   }
 });
 
-// 5. CARGA DE DATOS (EDICIÓN)
 watch(() => props.item, async (val) => {
   if (val) {
-    const incomingSources = val.sources || [];
-    initialSourceItems.value = incomingSources;
-    // Preparamos el valor del formulario (lo que valida Zod)
-    const formSources = incomingSources.map(s => ({
-      trackingId: s.trackingId,
-      quantityUsed: s.quantityUsed
-    }));
+    isLoadingData.value = true;
+    try {
+      const incomingSources = (val.sources || []).map(s => ({ ...s, remainingQuantity: s.remainingQuantity }));
+      initialSourceItems.value = incomingSources;
+      const formSources = incomingSources.map(s => ({ trackingId: s.trackingId, quantityUsed: s.quantityUsed }));
 
-    setValues({
-      sources: formSources,
-      //logisticUnits: val.logisticUnits || [],
-      startTime: new Date(val.startTime),
-      endTime: val.endTime ? new Date(val.endTime) : null,
-      comments: val.comments,
-      quantity: val.quantity,
-      quantityScrap: val.quantityScrap,
-      //scrapReason: val.scrapReason || '',
-      product: val.product || null,
-      team: val.team || null,
-      shift: val.shift || null,
-      equipment: val.equipment || null,
-      auxiliaryEquipmentIds: (val.auxiliaryEquipments || []).map(e => e.id),
-
-      // Mapeos de arrays
-      rawMaterials: (val.rawMaterials || []).map(r => ({
-        id: r.id,
-        rawMaterialId: r.rawMaterialId,
-        value: r.value || ''
-      })),
-      parameters: (val.parameters || []).map(p => ({
-        id: p.id,
-        parameterId: p.parameterId,
-        valueString: p.valueString || '',
-        valueNumber: p.valueNumber,
-        valueBool: p.valueBool,
-        valueDate: p.valueDate ? new Date(p.valueDate) : null
-      }))
-    });
-
-    await injectMandatoryRawMaterials();
-    await injectMandatoryParameters();
+      setValues({
+        sources: formSources,
+        startTime: new Date(val.startTime),
+        endTime: val.endTime ? new Date(val.endTime) : null,
+        comments: val.comments,
+        quantity: val.quantity,
+        quantityScrap: val.quantityScrap,
+        product: val.product || null,
+        team: val.team || null,
+        shift: val.shift || null,
+        equipment: val.equipment || null,
+        auxiliaryEquipmentIds: (val.auxiliaryEquipments || []).map(e => e.id),
+        rawMaterials: (val.rawMaterials || []).map(r => ({ id: r.id, rawMaterialId: r.rawMaterialId, value: r.value || '' })),
+        parameters: (val.parameters || []).map(p => ({
+          id: p.id,
+          parameterId: p.parameterId,
+          valueString: p.valueString || '',
+          valueNumber: p.valueNumber,
+          valueBool: p.valueBool,
+          valueDate: p.valueDate ? new Date(p.valueDate) : null
+        }))
+      });
+      await injectMandatoryRawMaterials();
+      await injectMandatoryParameters();
+    } finally {
+      setTimeout(() => { isLoadingData.value = false; }, 100);
+    }
   }
 }, { immediate: true });
 
-// Caso A: Creación / Cambio de Fase
 watch(phaseId, async (newId) => {
   if (newId) {
-    // Inyectar obligatorios después del reset
     await injectMandatoryRawMaterials();
     await injectMandatoryParameters();
   }
 }, { immediate: true });
 
-// 6. SUBMIT
-const onSubmit = handleSubmit(async (values) => {
+// Validaciones de cantidades
+const totalProduced = computed(() => (quantity.value || 0) + (quantityScrap.value || 0));
+const totalInput = computed(() => (sources.value || []).reduce((acc, item) => acc + (Number(item.quantityUsed) || 0), 0));
+
+const massBalanceAlert = computed(() => {
+  if (!showTrackingSource.value || totalInput.value <= 0) return null;
+  const diff = totalProduced.value - totalInput.value;
+
+  if (diff > 0) return { severity: 'error', icon: 'pi pi-exclamation-triangle', title: 'Inconsistência', message: `A produção (${totalProduced.value}) excede a entrada (${totalInput.value}) em ${diff} un.` };
+  if (diff === 0) return { severity: 'success', icon: 'pi pi-check-circle', title: 'Balanço Perfeito', message: `Entrada e saída coincidem (${totalInput.value} un).` };
+
+  // CASO WARNING (Merma)
+  return { severity: 'secondary', icon: 'pi pi-info-circle', title: 'Perda Técnica', message: `Consumo: ${totalInput.value} | Perda: ${Math.abs(diff)} un.` };
+});
+
+
+// 5. LÓGICA DE GUARDADO (Separada para poder llamarla desde Confirm)
+const executeSave = async (values) => {
   try {
-    // Preparar Payloads Anidados
     const parametersPayload = (parameters.value || []).map(p => ({
-      id: p.id,
-      parameterId: p.parameterId,
-      valueString: p.valueString,
-      valueNumber: p.valueNumber,
-      valueBool: p.valueBool,
-      valueDate: p.valueDate ? new Date(p.valueDate).toISOString() : null
+      id: p.id, parameterId: p.parameterId, valueString: p.valueString, valueNumber: p.valueNumber, valueBool: p.valueBool, valueDate: p.valueDate ? new Date(p.valueDate).toISOString() : null
     }));
 
-    const rawMaterialsPayload = (rawMaterials.value || [])
-      .filter(r => r.rawMaterialId)
-      .map(r => ({
-        id: r.id,
-        rawMaterialId: r.rawMaterialId,
-        value: r.value
-      }));
+    const rawMaterialsPayload = (rawMaterials.value || []).filter(r => r.rawMaterialId).map(r => ({
+      id: r.id, rawMaterialId: r.rawMaterialId, value: r.value
+    }));
 
     const payload = {
-      // Campos directos
       phaseId: phaseId.value,
-      //logisticUnits: values.logisticUnits,
       startTime: values.startTime,
       endTime: values.endTime,
       comments: values.comments,
@@ -317,9 +255,7 @@ const onSubmit = handleSubmit(async (values) => {
       equipmentId: values.equipment?.id,
       auxiliaryEquipmentIds: values.auxiliaryEquipmentIds,
       sources: values.sources,
-      quantityScrap: values.quantityScrap,
-      //scrapReason: values.quantityScrap > 0 ? values.scrapReason : null,
-      // Arrays
+      quantityScrap: values.quantityScrap ?? 0,
       rawMaterials: rawMaterialsPayload,
       parameters: parametersPayload
     };
@@ -328,97 +264,102 @@ const onSubmit = handleSubmit(async (values) => {
       const newRecord = await store.create(payload);
       createdTrackingId.value = newRecord.id;
       showSuccessDialog.value = true;
-
-      // Reset inteligente (conserva contexto)
       resetForm({
         values: {
           equipment: values.equipment,
-          product: values.product,
+          product: null,
           team: values.team,
           shift: values.shift,
           startTime: new Date(),
-          parameters: values.parameters, // Conserva params configurados
-          rawMaterials: values.rawMaterials, // Conserva MPs configuradas
+          parameters: values.parameters,
+          rawMaterials: values.rawMaterials,
           auxiliaryEquipmentIds: values.auxiliaryEquipmentIds,
-          // Limpia variables
-          //logisticUnits: [],
-          quantity: null,
-          comments: null,
-          endTime: null,
-          sources: [],
-          quantityScrap: null
-          //scrapReason: ''
+          quantity: null, comments: null, endTime: null, sources: [], quantityScrap: null
         }
       });
-      // Forzar mostrar select de nuevo en create loop
       showSourceSelect.value = true;
       initialSourceItems.value = [];
-
     } else {
+      //-- Modo Edición --
       await store.update(props.item.id, payload);
       notifySuccess('Registo atualizado com sucesso');
       emit('success');
     }
   } catch (err) {
-    showErrorDialog(err);
-    notifyError('Erro', err.detail);
+    const errorPayload = err?.response?.data || { message: 'Erro de Conexão', detail: err.message };
+    showErrorDialog(errorPayload, 'error');
+    notifyError('Erro', err?.response?.data?.message || err.message);
   }
-});
+};
 
 
-//Validaciones de cantidades usadas vs. poducidas
-// 1. CALCULO DE TOTALES
-const totalProduced = computed(() => {
-  const ok = quantity.value || 0;
-  const nok = quantityScrap.value || 0;
-  return ok + nok;
-});
+// 6. SUBMIT INTERCEPTADO
+const onSubmit = handleSubmit(async (values) => {
 
-const totalInput = computed(() => {
-  // Sumamos el quantityUsed de cada lote de origen seleccionado
-  return (sources.value || []).reduce((acc, item) => acc + (Number(item.quantityUsed) || 0), 0);
-});
+  // A. ERROR BLOQUEANTE: Producción mayor que entrada
+  if (massBalanceAlert.value && massBalanceAlert.value.severity === 'error') {
+    const diff = totalProduced.value - totalInput.value;
+    notifyError(
+      'Bloqueio de Inconsistência',
+      `A produção (${totalProduced.value}) não pode ser maior que a entrada (${totalInput.value}). Diferença: ${diff}`
+    );
+    return; // Stop
+  }
 
-// 2. ESTADO DEL BALANCE DE MASAS
-const massBalanceAlert = computed(() => {
-  // Solo calculamos si hay orígenes habilitados y seleccionados
-  if (!showTrackingSource.value || totalInput.value <= 0) return null;
+  // B. RECOLECTAR ADVERTENCIAS
+  let warningMessage = '';
+  let hasWarning = false;
 
-  const diff = totalProduced.value - totalInput.value;
+  // Advertencia 1: Perda Técnica (Entrada > Salida)
+  if (massBalanceAlert.value && massBalanceAlert.value.severity === 'secondary') {
+    const perda = Math.abs(totalProduced.value - totalInput.value);
+    warningMessage += `<p class="mb-2"><strong>Perda Técnica:</strong> Está a registar uma perda de <strong>${perda}</strong> unidades.</p>`;
+    hasWarning = true;
+  }
 
-  // CASO ROJO: Salida mayor que Entrada (Error)
-  if (diff > 0) {
-    return {
-      severity: 'error',
+  // Advertencia 2: Origens com quantidade ZERO
+  // Verificamos si hay orígenes seleccionados pero con quantityUsed 0 o null
+  const zeroQuantitySources = (values.sources || []).filter(s => !s.quantityUsed || s.quantityUsed <= 0);
+  if (zeroQuantitySources.length > 0) {
+    warningMessage += `<p><strong>Atenção:</strong> Existem <strong>${zeroQuantitySources.length}</strong> lotes de origem selecionados com quantidade 0.</p>`;
+    hasWarning = true;
+  }
+
+  // C. DECISIÓN: CONFIRMAR O GUARDAR
+  if (hasWarning) {
+    confirm.require({
+      group: confirmGroup,
+      message: warningMessage + '<br/>Deseja guardar o registo mesmo assim?',
+      header: 'Confirmação Necessária',
       icon: 'pi pi-exclamation-triangle',
-      title: 'Inconsistência',
-      message: `A produção (${totalProduced.value}) excede a entrada (${totalInput.value}) em ${diff} un.`
-    };
+      acceptLabel: 'Sim, Guardar',
+      rejectLabel: 'Não, Cancelar',
+      acceptClass: 'p-button-warning',
+      rejectClass: 'p-button-text',
+      accept: () => {
+        executeSave(values);
+      },
+      reject: () => {
+        // No hacemos nada, el usuario canceló
+      }
+    });
+  } else {
+    // Si no hay advertencias, guardamos directo
+    await executeSave(values);
   }
-
-  // CASO VERDE: Balance Exacto (0 pérdidas)
-  if (diff === 0) {
-    return {
-      severity: 'success', // Nuevo estado
-      icon: 'pi pi-check-circle',
-      title: 'Balanço Perfeito',
-      message: `Entrada e saída coincidem (${totalInput.value} un).`
-    };
-  }
-
-  // CASO GRIS: Salida menor que entrada (Merma técnica)
-  return {
-    severity: 'secondary',
-    icon: 'pi pi-info-circle',
-    title: 'Perda Técnica',
-    message: `Consumo: ${totalInput.value} | Perda: ${Math.abs(diff)} un.`
-  };
 });
-
 </script>
 
 <template>
   <div class="w-full">
+    <ConfirmDialog :group="confirmGroup">
+      <template #message="slotProps">
+        <div class="flex flex-col items-start w-full">
+          <div v-html="slotProps.message.message" class="text-surface-600 dark:text-surface-300"></div>
+        </div>
+      </template>
+    </ConfirmDialog>
+
     <form @submit.prevent="onSubmit" class="flex flex-col gap-6">
 
       <div class="bg-surface-50 dark:bg-surface-800 p-5 rounded-xl border border-surface-200 dark:border-surface-700">
@@ -447,7 +388,8 @@ const massBalanceAlert = computed(() => {
               :allowedPhases="currentRules.allowedSourcePhases" :target-reference-id="targetReferenceId"
               :match-reference="currentRules.matchReference" :filter-type="currentRules.filterType"
               :disabled="!product" />
-            <small v-if="errors.sources" class="text-red-500 mt-1 text-xs">{{ errors.sources }}</small>
+            <small v-if="errors.sources && submitCount > 0" class="text-red-500 mt-1 text-xs">{{ errors.sources
+              }}</small>
           </div>
 
 
@@ -485,7 +427,7 @@ const massBalanceAlert = computed(() => {
                   <label class="block text-[10px] uppercase font-bold text-red-500 mb-1.5 ml-1">
                     <i class="pi pi-times-circle"></i> NOK (Quebras)
                   </label>
-                  <InputNumber v-model="quantityScrap" fluid :useGrouping="false" placeholder="0" suffix=" un."
+                  <InputNumber v-model="quantityScrap" fluid :useGrouping="false" placeholder="0" :min="0" suffix=" un."
                     inputClass="text-red-600 dark:text-red-400 font-bold" class="w-full" />
                 </div>
                 <div class="col-span-1">
@@ -540,7 +482,6 @@ const massBalanceAlert = computed(() => {
             <Textarea v-model="scrapReason" rows="1" autoResize class="w-full" placeholder="Ex: Quebrado, Sujo..." />
           </div>
           -->
-
         </div>
       </div>
 
@@ -633,22 +574,49 @@ const massBalanceAlert = computed(() => {
           class="w-full sm:w-auto px-6 font-bold" v-can="writePermission" />
       </div>
 
-      <div v-if="errorList.length"
-        class="border border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-800 rounded-lg p-4 mt-4">
-        <div class="flex items-center gap-2 mb-2 text-red-700 dark:text-red-300 font-bold text-sm">
-          <i class="pi pi-exclamation-triangle"></i>
-          Foram encontrados erros no formulário:
-        </div>
+      <transition name="p-message-fade">
+        <div v-if="errorList.length && submitCount > 0"
+          class="relative mt-6 overflow-hidden rounded-xl border-l-4 border-red-500 bg-white shadow-md dark:bg-surface-900 transition-all duration-300">
 
-        <ul class="list-disc list-inside space-y-1 text-sm text-red-600 dark:text-red-300">
-          <li v-for="(error, i) in errorList" :key="i">
-            {{ error }}
-          </li>
-        </ul>
-      </div>
+          <div class="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent pointer-events-none"></div>
+
+          <div class="relative p-4 flex items-start gap-4">
+            <div
+              class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30">
+              <i class="pi pi-exclamation-circle text-red-600 dark:text-red-400 text-xl animate-pulse"></i>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-2">
+                <h5 class="text-sm font-bold text-red-800 dark:text-red-300 uppercase tracking-wide">
+                  Atenção: {{ errorList.length }} {{ errorList.length > 1 ? 'erros pendentes' : 'erro pendente' }}
+                </h5>
+                <span
+                  class="text-[10px] bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full font-bold uppercase">
+                  Ação necessária
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                <div v-for="(error, i) in errorList" :key="i"
+                  class="flex items-center gap-2 text-xs text-surface-600 dark:text-surface-400 group">
+                  <i
+                    class="pi pi-angle-right text-[10px] text-red-400 group-hover:translate-x-1 transition-transform"></i>
+                  <span class="leading-tight">{{ error }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="h-1 bg-red-500/20 w-full">
+            <div class="h-full bg-red-500 w-1/3 animate-shimmer"></div>
+          </div>
+        </div>
+      </transition>
       <Divider />
       <TrackingSuccessDialog v-model:visible="showSuccessDialog" :trackingId="createdTrackingId" />
-      <DialogInfo/>
+      <DialogInfo />
     </form>
   </div>
 </template>
+

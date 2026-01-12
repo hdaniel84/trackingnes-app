@@ -36,6 +36,7 @@ const router = createRouter({
                 permission: 'VIDRAGEM'     //Cada formulario maneja internamente el WRITE_ o READ_
             }
         },
+        /*
         {
             path: '/forno-entrada',
             name: 'forno-entrada',
@@ -49,18 +50,18 @@ const router = createRouter({
                 permission: 'FORNO_ENTRADA',
                 teamSlug: 3,    // Override para filtrar Equipos (Ej. Forno Entrada debe mostrar el equipo de Vidragem)
             }
-        },
+        },*/
         {
-            path: '/forno-saida',
-            name: 'forno-saida',
+            path: '/forno',
+            name: 'forno',
             component: () => import('@/views/pages/tracking/TrackingMain.vue'),
             meta: {
                 requiresAuth: true,
                 phaseId: 6,
-                title: 'Forno (Saída)',
+                title: 'Forno',
                 icon: 'pi pi-sign-out',
                 slug: 5,
-                permission: 'FORNO_SAIDA' //Cada formulario maneja internamente el WRITE_ o READ_
+                permission: 'FORNO_SAIDA'
             }
         },
         {

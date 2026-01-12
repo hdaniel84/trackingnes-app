@@ -126,6 +126,9 @@ const handleRefresh = () => { loadData(); };
 
               <div class="space-y-1">
                 <div class="text-sm font-semibold text-surface-700 dark:text-surface-200 truncate leading-tight">
+                  {{ item.product?.productCode || '' }}
+                </div>
+                <div class="text-sm font-semibold text-surface-700 dark:text-surface-200 truncate leading-tight">
                   {{ item.product?.description || 'Produto Desconhecido' }}
                 </div>
 

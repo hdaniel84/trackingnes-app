@@ -7,6 +7,6 @@ public class TrackingRawMaterialResponseDTO {
 
     private Long id;
     private Long rawMaterialId;
-    private String rawaMaterialDescription; 
+    private String rawMaterialDescription; 
     private String value;
 }

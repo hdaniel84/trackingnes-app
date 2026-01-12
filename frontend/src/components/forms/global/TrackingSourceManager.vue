@@ -14,7 +14,7 @@ const props = defineProps({
   disabled: Boolean,
   initialData: { type: Array, default: () => [] }
 });
-console.log(props.initialData);
+
 const emit = defineEmits(['update:modelValue']);
 const rows = ref([]);
 
@@ -24,6 +24,13 @@ const emitUpdate = () => {
     quantityUsed: r.quantityUsed
   }));
   emit('update:modelValue', cleanPayload);
+};
+
+const fillMax = (row) => {
+  if (row.available > 0) {
+    row.quantityUsed = row.available;
+    emitUpdate();
+  }
 };
 
 const onSourceAdded = (sourceObj) => {
@@ -45,7 +52,7 @@ watch(() => props.initialData, (val) => {
       // A. Obtenemos el stock remanente que reporta la base de datos
       // (Si es null, asumimos 0, pero idealmente el DTO nuevo ya lo trae)
       const dbRemaining = (item.remainingQuantity !== undefined && item.remainingQuantity !== null)
-        ? item.remainingQuantity : 0; 
+        ? item.remainingQuantity : 0;
 
       // B. Obtenemos lo que este registro YA está consumiendo actualmente
       const currentUsage = item.quantityUsed || 0;
@@ -58,8 +65,6 @@ watch(() => props.initialData, (val) => {
         available: realAvailable
       };
     });
-
-    // Importante: Emitimos para que el padre sepa que hay datos cargados
     emitUpdate();
   } else {
     rows.value = [];
@@ -123,9 +128,19 @@ const removeRow = (index) => {
               </div>
 
               <div class="w-24 shrink-0 flex flex-col">
+                <div class="flex justify-between items-end mb-0.5 px-1">
+                  <label class="text-[9px] text-surface-400">Qtd. Usada</label>
+                  <button type="button" @click="fillMax(row)"
+                    class="text-[9px] font-bold text-primary-500 hover:text-primary-700 hover:underline cursor-pointer focus:outline-none transition-colors"
+                    title="Usar todo o disponível">
+                    Tudo
+                  </button>
+                </div>
+
                 <InputNumber v-model="row.quantityUsed" @update:modelValue="emitUpdate" @blur="emitUpdate"
-                  :max="row.available" placeholder="Qtd usado" size="small" inputClass="text-right font-bold text-sm"
-                  class="w-full" :class="{ 'p-invalid': !row.quantityUsed && row.quantityUsed !== 0 }" />
+                  :max="row.available" placeholder="0" size="small" inputClass="text-right font-bold text-sm"
+                  class="w-full" :class="{'p-invalid': (!row.quantityUsed && row.quantityUsed !== 0) || (row.quantityUsed > row.available)
+                  }" />
               </div>
 
               <Button icon="pi pi-trash" text rounded severity="danger" @click="removeRow(idx)"

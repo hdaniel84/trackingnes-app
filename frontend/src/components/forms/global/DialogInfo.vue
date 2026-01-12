@@ -52,10 +52,8 @@ const dialogIcon = computed(() => {
                     {{ errorDialogMessage }}
                 </p>
 
-                <div 
-                    v-if="errorDialogDetails.length" 
-                    class="bg-surface-50 dark:bg-surface-800 p-3 rounded-lg border border-surface-200 dark:border-surface-700 max-h-48 overflow-y-auto"
-                >
+                <div v-if="errorDialogDetails.length" 
+                    class="bg-surface-50 dark:bg-surface-800 p-3 rounded-lg border border-surface-200 dark:border-surface-700 max-h-48 overflow-y-auto">
                     <h4 class="font-semibold text-sm mb-2 text-surface-700 dark:text-surface-300">Detalhes Técnicos:</h4>
                     <ul class="list-disc pl-4 text-xs text-surface-600 dark:text-surface-400 space-y-1">
                         <li v-for="(err, i) in errorDialogDetails" :key="i">{{ err.trim() }}</li>

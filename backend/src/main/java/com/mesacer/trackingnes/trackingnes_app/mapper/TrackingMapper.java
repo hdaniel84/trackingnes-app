@@ -49,6 +49,7 @@ public interface TrackingMapper {
     // Extrae solo los datos planos.
     @Mapping(target = "trackingId", source = "parent.id")
     @Mapping(target = "quantityUsed", source = "quantityUsed")
+    @Mapping(target = "productCode", source = "parent.product.productCode")
     @Mapping(target = "productDescription", source = "parent.product.description")
     @Mapping(target = "remainingQuantity", source = "parent.availability.remainingQuantity")
     TrackingResponseDTO.SourceSummaryDTO toSourceSummary(TrackingComposition composition);
