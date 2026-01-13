@@ -27,10 +27,6 @@ public class TrackingDTO {
     private ProductDTO product;
 
     @Valid
-    @NotNull(message = "El equipo de máquina es obligatorio")
-    private EquipmentDTO equipment;
-
-    @Valid
     @NotNull(message = "La fase es obligatoria")
     private PhaseDTO phase;
 

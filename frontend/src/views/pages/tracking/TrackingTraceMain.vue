@@ -52,10 +52,8 @@ const lazyParams = ref({
 // Catálogo de Fases (FALTA CREAR EL ENDPOINT PARA TRAER LAS FASES Y STYLE
 const phases = ref([
     { id: 1, description: 'Prensagem' },
-    { id: 2, description: 'Conformação' },
     { id: 3, description: 'Vidragem' },
-    { id: 5, description: 'Entrada do forno' },
-    { id: 6, description: 'Saída do forno' },
+    { id: 6, description: 'Forno' },
     { id: 7, description: 'Escolha' },
     { id: 9, description: 'Embalagem' }
 ]);

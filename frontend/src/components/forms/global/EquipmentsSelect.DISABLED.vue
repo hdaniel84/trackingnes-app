@@ -1,3 +1,4 @@
+<!-- EquipmentSelect -->
 <script setup>
 import { onMounted, computed, watch } from 'vue';
 import { useEquipmentStore } from '@/stores/equipmentStore';

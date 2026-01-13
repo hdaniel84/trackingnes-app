@@ -1,10 +1,16 @@
 package com.mesacer.trackingnes.trackingnes_app.service;
 
+import com.mesacer.trackingnes.trackingnes_app.dto.TrackingParameterRequestDTO;
+import com.mesacer.trackingnes.trackingnes_app.dto.TrackingRawMaterialRequestDTO;
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingRequestDTO;
 import com.mesacer.trackingnes.trackingnes_app.dto.TrackingResponseDTO;
 import com.mesacer.trackingnes.trackingnes_app.mapper.TrackingMapper;
+import com.mesacer.trackingnes.trackingnes_app.model.Parameter;
+import com.mesacer.trackingnes.trackingnes_app.model.RawMaterial;
 import com.mesacer.trackingnes.trackingnes_app.model.Tracking;
 import com.mesacer.trackingnes.trackingnes_app.model.TrackingComposition;
+import com.mesacer.trackingnes.trackingnes_app.model.TrackingParameter;
+import com.mesacer.trackingnes.trackingnes_app.model.TrackingRawMaterial;
 import com.mesacer.trackingnes.trackingnes_app.repository.TrackingRepository;
 import com.mesacer.trackingnes.trackingnes_app.repository.specs.TrackingSpecifications;
 
@@ -134,124 +140,202 @@ public class TrackingServiceImpl implements TrackingService {
         return mapper.toResponseDTO(saved);
     }
 
-
     @Override
     @Transactional
     public TrackingResponseDTO update(Long id, TrackingRequestDTO request) {
-        // 1. Buscar Entidad Existente
+        // 1. Buscar Entidad (Managed)
         Tracking existingEntity = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Tracking não encontrado: " + id));
 
-        // 2. Actualizar campos simples (MapStruct)
+        // 2. Actualizar campos simples
+        // IMPORTANTE: El Mapper debe tener ignore=true en las listas
         mapper.updateEntityFromDto(request, existingEntity);
 
-        // 3. ACTUALIZACIÓN MANUAL DE ORÍGENES (Sources)
+        // 3. ACTUALIZAR LISTAS HIJAS MANUALMENTE
+
+        // 3.1 Raw Materials
+        if (request.getRawMaterials() != null) {
+            updateRawMaterials(existingEntity, request.getRawMaterials());
+        }
+
+        // 3.2 Parameters
+        if (request.getParameters() != null) {
+            updateParameters(existingEntity, request.getParameters());
+        }
+
+        // 3.3 Sources
         if (request.getSources() != null) {
-
-            // A. Limpiar orígenes eliminados
-            List<Long> newSourceIds = request.getSources().stream()
-                    .map(TrackingRequestDTO.SourceItemDTO::getTrackingId)
-                    .collect(Collectors.toList());
-
-            existingEntity.getSourceComposition().removeIf(comp -> !newSourceIds.contains(comp.getParent().getId()));
-
-            // B. Actualizar o Agregar nuevos
-            for (TrackingRequestDTO.SourceItemDTO sourceDto : request.getSources()) {
-
-                // Buscamos si ya existe esta relación
-                TrackingComposition existingLink = existingEntity.getSourceComposition().stream()
-                        .filter(c -> c.getParent().getId().equals(sourceDto.getTrackingId()))
-                        .findFirst()
-                        .orElse(null);
-
-                if (existingLink != null) {
-                    // CASO 1: ACTUALIZAR CANTIDAD (Validación Robusta)
-                    Integer oldQty = existingLink.getQuantityUsed();
-                    Integer newQty = sourceDto.getQuantityUsed();
-
-                    // Solo validamos si estamos PIDIENDO MÁS material
-                    if (newQty > oldQty) {
-                        Integer diff = newQty - oldQty;
-
-                        // Obtenemos el stock disponible actual del padre desde la BD
-                        Tracking parent = existingLink.getParent();
-                        Integer availableInDb = 0;
-                        if (parent.getAvailability() != null) {
-                            availableInDb = parent.getAvailability().getRemainingQuantity();
-                        } else {
-                            // Fallback (debería tener availability si usas la vista)
-                            // Si no hay vista cargada, forzamos recarga o cálculo manual.
-                            // Aquí asumimos seguridad: si no carga availability, quizás no hay stock
-                            // seguro.
-                            availableInDb = parent.getQuantity(); // OJO: Esto podría ser inseguro si no restas lo usado
-                                                                  // por otros.
-                        }
-
-                        if (diff > availableInDb) {
-                            throw new IllegalArgumentException(
-                                    String.format(
-                                            "Stock insuficiente no lote %d para o aumento solicitado. Disponível: %d, Aumento: %d",
-                                            parent.getId(), availableInDb, diff));
-                        }
-                    }
-
-                    // Si pasa la validación (o si diff <= 0), actualizamos
-                    existingLink.setQuantityUsed(newQty);
-
-                } else {
-                    // CASO 2: NUEVA RELACIÓN (Validación Estándar)
-                    Tracking parent = repository.findById(sourceDto.getTrackingId())
-                            .orElseThrow(() -> new EntityNotFoundException(
-                                    "Origen no encontrado: " + sourceDto.getTrackingId()));
-
-                    Integer available = 0;
-                    if (parent.getAvailability() != null) {
-                        available = parent.getAvailability().getRemainingQuantity();
-                    } else {
-                        available = parent.getQuantity();
-                    }
-
-                    if (sourceDto.getQuantityUsed() > available) {
-                        throw new IllegalArgumentException(
-                                String.format(
-                                        "Stock insuficiente para adicionar um novo lote %d. Disponível: %d, Solicitado: %d",
-                                        parent.getId(), available, sourceDto.getQuantityUsed()));
-                    }
-
-                    existingEntity.addSource(parent, sourceDto.getQuantityUsed());
-                }
-            }
+            updateSources(existingEntity, request.getSources());
         }
 
-        // 4. Relaciones bidireccionales
-        if (existingEntity.getParameters() != null) {
-            existingEntity.getParameters().forEach(param -> param.setTracking(existingEntity));
-        }
-        if (existingEntity.getRawMaterials() != null) {
-            existingEntity.getRawMaterials().forEach(param -> param.setTracking(existingEntity));
+        // 4. VALIDACIÓN DE INTEGRIDAD DOWNSTREAM (Validación de hijos)
+        // Obtenemos cuanto han gastado los hijos de este tracking
+        Integer totalUsedByChildren = repository.getUsedQuantityByParent(id);
+
+        if (existingEntity.getQuantity() < totalUsedByChildren) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Não é possível atualizar a quantidade para %d. Este lote já tem %d unidades consumidas por processos seguintes (Restante ficaria negativo).",
+                            existingEntity.getQuantity(),
+                            totalUsedByChildren));
         }
 
+        // 5. Validar Balance de Masa
         validateMassBalance(existingEntity);
+
+        // 6. Guardar
         Tracking saved = repository.saveAndFlush(existingEntity);
         entityManager.refresh(saved);
+        refreshParents(saved);
 
-        // 3. REFRESCAR LOS PADRES Y SU DISPONIBILIDAD
+        return mapper.toResponseDTO(saved);
+    }
+
+    // =========================================================================
+    // MÉTODOS AUXILIARES
+    // =========================================================================
+
+    private void updateRawMaterials(Tracking entity, List<TrackingRawMaterialRequestDTO> dtos) {
+        // A. IDs entrantes
+        List<Long> incomingIds = dtos.stream()
+                .map(TrackingRawMaterialRequestDTO::getId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // B. Eliminar huérfanos
+        entity.getRawMaterials().removeIf(rm -> rm.getId() != null && !incomingIds.contains(rm.getId()));
+
+        // C. Agregar o Actualizar
+        for (TrackingRawMaterialRequestDTO dto : dtos) {
+
+            // Obtenemos la referencia del tipo de material usando EntityManager
+            // Esto evita una consulta SELECT si solo necesitamos asignar la FK
+            RawMaterial rawMaterialRef = entityManager.getReference(RawMaterial.class, dto.getRawMaterialId());
+
+            if (dto.getId() == null) {
+                // NUEVO
+                TrackingRawMaterial newRm = new TrackingRawMaterial();
+                newRm.setRawMaterialType(rawMaterialRef); // ✅ CORREGIDO: Asignamos la Entidad, no el ID
+                newRm.setValue(dto.getValue());
+                newRm.setTracking(entity);
+                entity.getRawMaterials().add(newRm);
+            } else {
+                // ACTUALIZAR
+                entity.getRawMaterials().stream()
+                        .filter(rm -> rm.getId().equals(dto.getId()))
+                        .findFirst()
+                        .ifPresent(existingRm -> {
+                            existingRm.setRawMaterialType(rawMaterialRef); // ✅ CORREGIDO
+                            existingRm.setValue(dto.getValue());
+                        });
+            }
+        }
+    }
+
+    private void updateParameters(Tracking entity, List<TrackingParameterRequestDTO> dtos) {
+        List<Long> incomingIds = dtos.stream()
+                .map(TrackingParameterRequestDTO::getId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+
+        entity.getParameters().removeIf(p -> p.getId() != null && !incomingIds.contains(p.getId()));
+
+        for (TrackingParameterRequestDTO dto : dtos) {
+
+            // Obtenemos la referencia del Parametro definición
+            Parameter parameterRef = entityManager.getReference(Parameter.class, dto.getParameterId());
+
+            if (dto.getId() == null) {
+                // NUEVO
+                TrackingParameter newParam = new TrackingParameter();
+                newParam.setParameter(parameterRef); // ✅ CORREGIDO: Asignamos la Entidad
+                newParam.setValueString(dto.getValueString());
+                newParam.setValueNumber(dto.getValueNumber());
+                newParam.setValueBool(dto.getValueBool());
+                newParam.setValueDate(dto.getValueDate());
+                newParam.setTracking(entity);
+                entity.getParameters().add(newParam);
+            } else {
+                // ACTUALIZAR
+                entity.getParameters().stream()
+                        .filter(p -> p.getId().equals(dto.getId()))
+                        .findFirst()
+                        .ifPresent(existingP -> {
+                            existingP.setParameter(parameterRef); // ✅ CORREGIDO
+                            existingP.setValueString(dto.getValueString());
+                            existingP.setValueNumber(dto.getValueNumber());
+                            existingP.setValueBool(dto.getValueBool());
+                            existingP.setValueDate(dto.getValueDate());
+                        });
+            }
+        }
+    }
+
+    private void updateSources(Tracking existingEntity, List<TrackingRequestDTO.SourceItemDTO> sources) {
+        List<Long> newSourceIds = sources.stream()
+                .map(TrackingRequestDTO.SourceItemDTO::getTrackingId)
+                .collect(Collectors.toList());
+
+        existingEntity.getSourceComposition().removeIf(comp -> !newSourceIds.contains(comp.getParent().getId()));
+
+        for (TrackingRequestDTO.SourceItemDTO sourceDto : sources) {
+
+            TrackingComposition existingLink = existingEntity.getSourceComposition().stream()
+                    .filter(c -> c.getParent().getId().equals(sourceDto.getTrackingId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingLink != null) {
+                Integer oldQty = existingLink.getQuantityUsed();
+                Integer newQty = sourceDto.getQuantityUsed();
+
+                if (newQty > oldQty) {
+                    Integer diff = newQty - oldQty;
+                    validateParentAvailability(existingLink.getParent(), diff, true);
+                }
+                existingLink.setQuantityUsed(newQty);
+            } else {
+                Tracking parent = repository.findById(sourceDto.getTrackingId())
+                        .orElseThrow(() -> new EntityNotFoundException(
+                                "Origen no encontrado: " + sourceDto.getTrackingId()));
+
+                validateParentAvailability(parent, sourceDto.getQuantityUsed(), false);
+                existingEntity.addSource(parent, sourceDto.getQuantityUsed());
+            }
+        }
+    }
+
+    // Helper para validar stock disponible en el Padre (Upstream)
+    private void validateParentAvailability(Tracking parent, Integer requiredAmount, boolean isIncrement) {
+        Integer available = 0;
+        if (parent.getAvailability() != null) {
+            available = parent.getAvailability().getRemainingQuantity();
+        } else {
+            available = parent.getQuantity(); // Fallback
+        }
+
+        if (requiredAmount > available) {
+            String msg = isIncrement
+                    ? "Stock insuficiente no lote %d para o aumento. Disponível: %d, Aumento: %d"
+                    : "Stock insuficiente no lote %d. Disponível: %d, Solicitado: %d";
+
+            throw new IllegalArgumentException(String.format(msg, parent.getId(), available, requiredAmount));
+        }
+    }
+
+    // Helper para refrescar contexto de persistencia
+    private void refreshParents(Tracking saved) {
         if (saved.getSourceComposition() != null) {
             for (TrackingComposition composition : saved.getSourceComposition()) {
                 Tracking parent = composition.getParent();
                 if (parent != null) {
-                    // A. Refrescamos al Padre (Tracking)
                     entityManager.refresh(parent);
-
-                    // B. Refrescamos explícitamente la Vista de Disponibilidad
                     if (parent.getAvailability() != null) {
                         entityManager.refresh(parent.getAvailability());
                     }
                 }
             }
         }
-
-        return mapper.toResponseDTO(saved);
     }
 
     @Override
@@ -300,7 +384,8 @@ public class TrackingServiceImpl implements TrackingService {
      * orígenes.
      */
     private void validateMassBalance(Tracking entity) {
-        // 1. Si no hay orígenes, no hay balance de masa contra lotes anteriores que validar.
+        // 1. Si no hay orígenes, no hay balance de masa contra lotes anteriores que
+        // validar.
         if (entity.getSourceComposition() == null || entity.getSourceComposition().isEmpty()) {
             return;
         }

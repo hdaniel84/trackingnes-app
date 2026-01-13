@@ -61,9 +61,10 @@ const trackingBaseObject = z.object({
   product: requiredObject('Produto é obrigatório'),
   team: requiredObject('Equipa é obrigatória'),
   shift: requiredObject('Turno é obrigatório'),
-  equipment: requiredObject('Equipamento é obrigatório'),
+  //equipment: requiredObject('Equipamento é obrigatório'),
 
-  auxiliaryEquipmentIds: z.array(z.number()).optional(),
+  auxiliaryEquipmentIds: z.array(z.number())
+    .min(1, 'É obrigatório indicar pelo menos um equipamento'),
 
   // D. Arrays Complejos (Raw Materials)
   rawMaterials: z

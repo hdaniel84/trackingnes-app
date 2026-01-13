@@ -20,7 +20,6 @@ public interface TrackingMapper {
     @Mapping(target = "team", source = "teamId")
     @Mapping(target = "shift", source = "shiftId")
     @Mapping(target = "product", source = "productId")
-    @Mapping(target = "equipment", source = "equipmentId")
     @Mapping(target = "phase", source = "phaseId")
     @Mapping(target = "auxiliaryEquipments", source = "auxiliaryEquipmentIds")
 
@@ -36,6 +35,9 @@ public interface TrackingMapper {
     // --- MAPPING DE ACTUALIZACIÓN ---
     @InheritConfiguration
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "rawMaterials", ignore = true)
+    @Mapping(target = "parameters", ignore = true)      
+    @Mapping(target = "sourceComposition", ignore = true)
     void updateEntityFromDto(TrackingRequestDTO dto, @MappingTarget Tracking entity);
 
     // --- MAPPING DE SALIDA ---

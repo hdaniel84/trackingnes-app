@@ -86,6 +86,6 @@ public interface TrackingRepository extends JpaRepository<Tracking, Long>, JpaSp
     // CALCULAR CONSUMO TOTAL DE UN LOTE PADRE
     // Suma todo lo que se ha usado de este padre en cualquier hijo
     @Query("SELECT COALESCE(SUM(tc.quantityUsed), 0) FROM TrackingComposition tc WHERE tc.parent.id = :parentId")
-    Double getUsedQuantityByParent(@Param("parentId") Long parentId);
+    Integer getUsedQuantityByParent(@Param("parentId") Long parentId);
 
 }

@@ -11,7 +11,6 @@ public class TrackingResponseDTO {
     private TeamDTO team;
     private ShiftDTO shift;
     private ProductDTO product;
-    private EquipmentDTO equipment;
     private PhaseDTO phase;
     private List<EquipmentDTO> auxiliaryEquipments;
 

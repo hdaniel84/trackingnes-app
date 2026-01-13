@@ -11,19 +11,19 @@ import { useParameterStore } from '@/stores/parameterStore';
 // Helpers & UI
 import { useNotify } from '@/layout/composables/notify';
 import { useErrorDialog } from '@/layout/composables/errorDialog';
-import { useConfirm } from "primevue/useconfirm"; 
+import { useConfirm } from "primevue/useconfirm";
 
 import DatePicker from 'primevue/datepicker';
 import Textarea from 'primevue/textarea';
 import Button from 'primevue/button';
 import Divider from 'primevue/divider';
-import ConfirmDialog from 'primevue/confirmdialog'; 
+import ConfirmDialog from 'primevue/confirmdialog';
 
 // Componentes Globales
 import ProductSelect from '@/components/forms/global/ProductSelect.vue';
 import TeamsSelect from '@/components/forms/global/TeamsSelect.vue';
 import ShiftsSelect from '@/components/forms/global/ShiftsSelect.vue';
-import EquipmentsSelect from '@/components/forms/global/EquipmentsSelect.vue';
+//import EquipmentsSelect from '@/components/forms/global/EquipmentsSelect.vue';
 import ParametersForm from '@/components/forms/global/ParametersForm.vue';
 import RawMaterialsForm from '@/components/forms/global/RawMaterialsForm.vue';
 import AuxiliaryEquipmentsSelect from '@/components/forms/global/AuxiliaryEquipmentsSelect.vue';
@@ -51,7 +51,7 @@ const showSuccessDialog = ref(false);
 const createdTrackingId = ref(null);
 const { notifySuccess, notifyError } = useNotify();
 const { showErrorDialog } = useErrorDialog();
-const confirm = useConfirm(); 
+const confirm = useConfirm();
 
 const errorList = computed(() => {
   return Object.values(errors.value || {});
@@ -141,7 +141,7 @@ const { value: endTime } = useField('endTime');
 const { value: comments } = useField('comments');
 const { value: team } = useField('team');
 const { value: shift } = useField('shift');
-const { value: equipment } = useField('equipment');
+//const { value: equipment } = useField('equipment');
 const { value: quantity } = useField('quantity');
 const { value: quantityScrap } = useField('quantityScrap');
 const { value: parameters } = useField('parameters');
@@ -189,7 +189,7 @@ watch(() => props.item, async (val) => {
         product: val.product || null,
         team: val.team || null,
         shift: val.shift || null,
-        equipment: val.equipment || null,
+        //equipment: val.equipment || null,
         auxiliaryEquipmentIds: (val.auxiliaryEquipments || []).map(e => e.id),
         rawMaterials: (val.rawMaterials || []).map(r => ({ id: r.id, rawMaterialId: r.rawMaterialId, value: r.value || '' })),
         parameters: (val.parameters || []).map(p => ({
@@ -252,7 +252,7 @@ const executeSave = async (values) => {
       productId: values.product?.id,
       teamId: values.team?.id,
       shiftId: values.shift?.id,
-      equipmentId: values.equipment?.id,
+      //equipmentId: values.equipment?.id,
       auxiliaryEquipmentIds: values.auxiliaryEquipmentIds,
       sources: values.sources,
       quantityScrap: values.quantityScrap ?? 0,
@@ -266,14 +266,14 @@ const executeSave = async (values) => {
       showSuccessDialog.value = true;
       resetForm({
         values: {
-          equipment: values.equipment,
+          //equipment: values.equipment,
           product: null,
           team: values.team,
           shift: values.shift,
           startTime: new Date(),
-          parameters: values.parameters,
+          parameters: [],
           rawMaterials: values.rawMaterials,
-          auxiliaryEquipmentIds: values.auxiliaryEquipmentIds,
+          auxiliaryEquipmentIds: [],
           quantity: null, comments: null, endTime: null, sources: [], quantityScrap: null
         }
       });
@@ -286,9 +286,8 @@ const executeSave = async (values) => {
       emit('success');
     }
   } catch (err) {
-    const errorPayload = err?.response?.data || { message: 'Erro de Conexão', detail: err.message };
-    showErrorDialog(errorPayload, 'error');
-    notifyError('Erro', err?.response?.data?.message || err.message);
+    showErrorDialog(err, 'error');
+    notifyError('Erro', err.message);
   }
 };
 
@@ -369,10 +368,18 @@ const onSubmit = handleSubmit(async (values) => {
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+          <!--
           <div class="col-span-12 md:col-span-6">
             <EquipmentsSelect v-model="equipment" :filterSection="filterSectionVar" />
             <small v-if="errors.equipment" class="text-red-500 mt-1 flex items-center gap-1 text-xs">
               <i class="pi pi-exclamation-circle"></i> {{ errors.equipment }}
+            </small>
+          </div>
+          -->
+          <div class="col-span-12 md:col-span-6">
+            <AuxiliaryEquipmentsSelect v-model="auxiliaryEquipmentIds" :filterSection="filterSectionVar" />
+            <small v-if="errors.auxiliaryEquipmentIds" class="text-red-500 mt-1 flex items-center gap-1 text-xs">
+              <i class="pi pi-exclamation-circle"></i> {{ errors.auxiliaryEquipmentIds }}
             </small>
           </div>
 
@@ -389,7 +396,7 @@ const onSubmit = handleSubmit(async (values) => {
               :match-reference="currentRules.matchReference" :filter-type="currentRules.filterType"
               :disabled="!product" />
             <small v-if="errors.sources && submitCount > 0" class="text-red-500 mt-1 text-xs">{{ errors.sources
-              }}</small>
+            }}</small>
           </div>
 
 
@@ -556,11 +563,6 @@ const onSubmit = handleSubmit(async (values) => {
 
       <slot name="extra-fields" :values="formValues"></slot>
 
-      <div class="col-span-12">
-        <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Equipamentos Auxiliares</label>
-        <AuxiliaryEquipmentsSelect v-model="auxiliaryEquipmentIds" :filterSection="filterSectionVar" />
-      </div>
-
       <div>
         <label class="block text-xs font-medium text-surface-500 mb-1 ml-1">Observações / Comentários</label>
         <Textarea id="comments" v-model="comments" rows="3" class="w-full"
@@ -619,4 +621,3 @@ const onSubmit = handleSubmit(async (values) => {
     </form>
   </div>
 </template>
-

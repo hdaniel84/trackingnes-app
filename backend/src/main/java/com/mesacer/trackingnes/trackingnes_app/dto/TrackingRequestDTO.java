@@ -23,9 +23,7 @@ public class TrackingRequestDTO {
     @NotNull(message = "El ID del producto es obligatorio")
     private Long productId;
 
-    @NotNull(message = "El ID de la máquina es obligatorio")
-    private Long equipmentId;
-
+    @NotEmpty(message = "Equipamenteo é necessário")
     private List<Long> auxiliaryEquipmentIds;
 
     private Long phaseId;

@@ -36,11 +36,7 @@ public class Tracking {
     @JoinColumn(name = "id_product")
     private Product product;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "id_equipment")
-    private Equipment equipment;
-
-    // 2. NUEVO: LISTA DE EQUIPAMIENTOS AUXILIARES (No mandatory)
+    // 2. NUEVO: LISTA DE EQUIPAMIENTOS
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "tracking_equipments", joinColumns = @JoinColumn(name = "id_tracking"), inverseJoinColumns = @JoinColumn(name = "id_equipment"))
     private List<Equipment> auxiliaryEquipments = new ArrayList<>();

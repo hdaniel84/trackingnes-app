@@ -98,7 +98,7 @@ const productionStats = computed(() => {
                         <div class="text-center px-2">
                             <span class="block text-[10px] uppercase font-bold text-red-500 mb-0.5">NOK</span>
                             <span class="text-xl font-bold text-red-600 dark:text-red-400">{{ productionStats.qtyScrap
-                            }}</span>
+                                }}</span>
                         </div>
                         <div class="w-px h-8 bg-surface-200 dark:bg-surface-700"></div>
                         <div class="text-center px-2">
@@ -205,9 +205,14 @@ const productionStats = computed(() => {
                             <i class="pi pi-cog"></i>
                         </div>
                         <div>
-                            <span class="text-[10px] font-bold text-surface-400 uppercase block">Equipamento</span>
-                            <span class="text-sm font-bold text-surface-800 dark:text-surface-200">{{
-                                props.item.equipment?.description }}</span>
+                            <span class="text-[10px] font-bold text-surface-400 uppercase block">Equipamento(s)</span>
+                            <span class="text-sm font-bold text-surface-800 dark:text-surface-200">
+                                <div v-if="props.item.auxiliaryEquipments && props.item.auxiliaryEquipments.length > 0">
+                                    <div v-for="(eq, index) in props.item.auxiliaryEquipments" :key="index">
+                                        {{ eq.description }}
+                                    </div>
+                                </div>
+                            </span>
                         </div>
                     </div>
                 </div>
