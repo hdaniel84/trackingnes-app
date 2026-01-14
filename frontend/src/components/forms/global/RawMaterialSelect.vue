@@ -7,9 +7,7 @@ import Select from 'primevue/select';
 const props = defineProps({
   modelValue: { type: [Number, String, null], default: null },
   phaseId: { type: Number, default: null },
-  // NUEVAS PROP
-  disabled: { type: Boolean, default: false },
-  excludedIds: { type: Array, default: () => [] }
+  disabled: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -22,12 +20,7 @@ const filteredItems = computed(() => {
 
   return items.filter(item => {
     const matchPhase = !props.phaseId || item.phase?.id === props.phaseId;
-
-    // 2. Filtro de Exclusión (Nuevo)
-    // Si el ID está en la lista de excluidos, NO lo mostramos
-    const isExcluded = props.excludedIds.includes(item.id);
-
-    return matchPhase && !isExcluded;
+    return matchPhase;
   });
 });
 

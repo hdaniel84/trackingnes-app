@@ -45,7 +45,8 @@ export const PHASE_RULES = {
         productFilter: ['FF'],  //['FF','FS']Filtro del select product en la fase (lo que el usuario puede seleccionar)
         allowedSourcePhases: [6],
         matchReference: true,
-        hideRawMaterials: true
+        hideRawMaterials: true,
+        showSecondQuantiy: true
     },
     //Embalagem
     9: {

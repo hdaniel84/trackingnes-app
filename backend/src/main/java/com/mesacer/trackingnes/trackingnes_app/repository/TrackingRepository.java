@@ -65,21 +65,20 @@ public interface TrackingRepository extends JpaRepository<Tracking, Long>, JpaSp
             """, nativeQuery = true)
     List<Long> findAncestorIds(@Param("trackingId") Long trackingId);
 
-    // --- QUERY INVERSA (Opcional pero útil) ---
-    // "Forward Traceability": ¿A dónde fue a parar este lote? (Hijos, Nietos)
+    // --- QUERY INVERSA (Dónde fue a parar este nodo) ---
     @Query(value = """
-                WITH RECURSIVE forward_trace AS (
-                    SELECT tc.id_child, 1 as depth
-                    FROM tracking_composition tc
-                    WHERE tc.id_parent = :trackingId
+                WITH RECURSIVE descendants AS (
+                    SELECT id_child, id_parent
+                    FROM tracking_composition
+                    WHERE id_parent = :trackingId
 
                     UNION ALL
 
-                    SELECT tc.id_child, ft.depth + 1
+                    SELECT tc.id_child, tc.id_parent
                     FROM tracking_composition tc
-                    INNER JOIN forward_trace ft ON tc.id_parent = ft.id_child
+                    INNER JOIN descendants d ON tc.id_parent = d.id_child
                 )
-                SELECT DISTINCT id_child FROM forward_trace
+                SELECT id_child FROM descendants
             """, nativeQuery = true)
     List<Long> findDescendantIds(@Param("trackingId") Long trackingId);
 

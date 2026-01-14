@@ -33,8 +33,10 @@ public class TrackingRequestDTO {
     @NotNull(message = "La cantidad es obligatoria")
     @Positive(message = "La cantidad debe ser mayor que cero")
     private Integer quantity;
-    private Integer quantityScrap; // Quebras
-    private String scrapReason;  
+    private Integer quantityScrap;
+    private Integer quantitySecond;
+    private Integer quantityRework;
+    private String scrapReason;
 
     @NotNull(message = "El startTime es obligatorio")
     private LocalDateTime startTime;

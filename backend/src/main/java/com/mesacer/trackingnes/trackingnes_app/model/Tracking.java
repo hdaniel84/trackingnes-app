@@ -56,6 +56,12 @@ public class Tracking {
     @Column(name = "quantity_scrap")
     private Integer quantityScrap = 0;
 
+    @Column(name = "quantity_second")
+    private Integer quantitySecond = 0;
+
+    @Column(name = "quantity_rework")
+    private Integer quantityRework = 0;
+
     @Column(name = "scrap_reason")
     private String scrapReason;
 

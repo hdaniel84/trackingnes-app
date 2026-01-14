@@ -29,5 +29,6 @@ public class TraceabilityNodeDTO {
         private String time;
         private String team; // Nombre del equipo
         private String shift; // Turno
+        private String styleClass;
     }
 }

@@ -15,17 +15,6 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 const store = useRawMaterialStore();
 
-// HELPER PARA CALCULAR EXCLUSIONES
-// Devuelve un array con los IDs que YA están seleccionados en otras filas
-const getExcludedIds = (currentRowIndex) => {
-  return (props.modelValue || [])
-    .filter((row, index) =>
-      index !== currentRowIndex && // Ignoramos la fila actual (para que no se auto-oculte su valor)
-      row.rawMaterialId // Solo nos importan filas que ya tengan algo seleccionado
-    )
-    .map(row => row.rawMaterialId);
-};
-
 // 2. Cargar datos para saber cuáles son mandatory
 onMounted(() => {
   if (store.items.length === 0) store.fetchAll();
@@ -38,7 +27,27 @@ const isMandatory = (rawMaterialId) => {
   return item?.mandatory === true;
 };
 
-// ... addRow, removeRow, updateRow (sin cambios en lógica base) ...
+// Regla:Se bloquea solo si es obligatorio Y es la PRIMERA aparición en la lista.
+const isRowLocked = (row, index) => {
+  if (!row.rawMaterialId || !isMandatory(row.rawMaterialId)) {
+    return false;
+  }
+  const firstIndex = props.modelValue.findIndex(r => r.rawMaterialId === row.rawMaterialId);
+  return firstIndex === index;
+};
+
+// Helper para detectar duplicados visualmente
+const isDuplicateRow = (row, index) => {
+  if (!row.rawMaterialId || !row.value) return false;
+
+  return props.modelValue.some((otherRow, otherIndex) => {
+    return (
+      otherIndex !== index &&
+      otherRow.rawMaterialId === row.rawMaterialId &&
+      otherRow.value.trim().toLowerCase() === row.value.trim().toLowerCase()
+    );
+  });
+};
 
 const addRow = () => {
   const current = props.modelValue || [];
@@ -74,8 +83,7 @@ const updateRow = (index, field, value) => {
     <div v-for="(row, index) in (modelValue || [])" :key="index" class="flex gap-3 items-start relative">
 
       <div class="w-3/5 relative">
-        <RawMaterialSelect :modelValue="row.rawMaterialId" :phaseId="props.phaseId"
-          :disabled="isMandatory(row.rawMaterialId)" :excludedIds="getExcludedIds(index)"
+        <RawMaterialSelect :modelValue="row.rawMaterialId" :phaseId="props.phaseId" :disabled="isRowLocked(row, index)"
           @update:modelValue="(val) => updateRow(index, 'rawMaterialId', val)" />
 
         <Tag v-if="isMandatory(row.rawMaterialId)" value="Obrigatório" severity="warning"
@@ -83,15 +91,17 @@ const updateRow = (index, field, value) => {
       </div>
 
       <div class="flex-1">
-        <InputText :modelValue="row.value" placeholder="Ex: Lote 123" class="w-full"
-        :id="`rawMaterial-value-${index}`" :name="`rawMaterials[${index}].value`"
-          :class="{ 'p-invalid': showValidation && !row.value && isMandatory(row.rawMaterialId) }"
+        <InputText :modelValue="row.value" placeholder="Ex: Lote 123" class="w-full" :id="`rawMaterial-value-${index}`"
+          :name="`rawMaterials[${index}].value`"
+          :class="{ 'p-invalid': (showValidation && !row.value && isMandatory(row.rawMaterialId)) || isDuplicateRow(row, index) }"
           @update:modelValue="(val) => updateRow(index, 'value', val)" />
+        <small v-if="isDuplicateRow(row, index)" class="text-red-500 text-[10px] block mt-1">
+          Entrada duplicada
+        </small>
       </div>
 
-      <div class="w-10 flex justify-center" v-if="!isMandatory(row.rawMaterialId)">
-        <Button icon="pi pi-trash" severity="danger" variant="text" rounded :disabled="isMandatory(row.rawMaterialId)"
-          @click="removeRow(index)"
+      <div class="w-10 flex justify-center" v-if="!isRowLocked(row, index)">
+        <Button icon="pi pi-trash" severity="danger" variant="text" rounded @click="removeRow(index)"
           v-tooltip.left="isMandatory(row.rawMaterialId) ? 'Item obrigatório não pode ser removido' : 'Remover'" />
       </div>
     </div>

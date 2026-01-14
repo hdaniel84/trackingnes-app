@@ -80,10 +80,11 @@ const trackingBaseObject = z.object({
     .min(1, { message: 'É obrigatório adicionar pelo menos uma matéria prima' })
     .refine(
       (items) => {
-        const ids = items.map((i) => i.rawMaterialId);
-        return new Set(ids).size === ids.length;
+        // Creamos un set de strings con formato "id-valor"
+        const combinations = items.map((i) => `${i.rawMaterialId}-${i.value.toLowerCase().trim()}`);
+        return new Set(combinations).size === combinations.length;
       },
-      { message: 'Não pode repetir a mesma matéria prima' }
+      { message: 'Não pode adicionar a misma matéria prima com o mismo lote/valor' }
     ),
 
   // E. Parámetros
@@ -157,6 +158,10 @@ export const trackingFornoFormSchema = trackingBaseObject
   .refine(dateValidation, dateValidationOptions);
 
 export const trackingEscolhaFormSchema = trackingBaseObject
+  .extend({
+    quantitySecond: z.any().optional().default(0),
+    quantityRework: z.any().optional().default(0)
+  })
   .omit({ rawMaterials: true })
   .refine(dateValidation, dateValidationOptions);
 

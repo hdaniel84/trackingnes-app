@@ -379,34 +379,39 @@ public class TrackingServiceImpl implements TrackingService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Valida que la producción total (OK + Scrap) no exceda el consumo total de los
-     * orígenes.
-     */
     private void validateMassBalance(Tracking entity) {
-        // 1. Si no hay orígenes, no hay balance de masa contra lotes anteriores que
-        // validar.
         if (entity.getSourceComposition() == null || entity.getSourceComposition().isEmpty()) {
             return;
+        }
+
+        // 1. Validar que ninguna cantidad sea negativa (Seguridad extra)
+        if ((entity.getQuantity() != null && entity.getQuantity() < 0) ||
+                (entity.getQuantityScrap() != null && entity.getQuantityScrap() < 0) ||
+                (entity.getQuantitySecond() != null && entity.getQuantitySecond() < 0) ||
+                (entity.getQuantityRework() != null && entity.getQuantityRework() < 0)) {
+            throw new IllegalArgumentException("As quantidades não podem ser valores negativos.");
         }
 
         // 2. Calcular Total Salida (Output)
         int qtyOk = entity.getQuantity() != null ? entity.getQuantity() : 0;
         int qtyScrap = entity.getQuantityScrap() != null ? entity.getQuantityScrap() : 0;
-        int totalOutput = qtyOk + qtyScrap;
+        int qtySecond = entity.getQuantitySecond() != null ? entity.getQuantitySecond() : 0;
+        int qtyRework = entity.getQuantityRework() != null ? entity.getQuantityRework() : 0;
+
+        int totalOutput = qtyOk + qtyScrap + qtySecond + qtyRework;
 
         // 3. Calcular Total Entrada (Input)
         int totalInput = entity.getSourceComposition().stream()
                 .mapToInt(TrackingComposition::getQuantityUsed)
                 .sum();
 
-        // 4. Validar: La Salida NO puede ser mayor que la Entrada
+        // 4. Validar
         if (totalOutput > totalInput) {
             int diff = totalOutput - totalInput;
             throw new IllegalArgumentException(
                     String.format(
-                            "Inconsistência de Balanço: A produção total (%d) excede a entrada total (%d) em %d unidades.",
-                            totalOutput, totalInput, diff));
+                            "Inconsistência de Balanço: A produção total (%d) [OK:%d + Scrap:%d + 2ª:%d + Retoque:%d] excede a entrada total (%d) em %d unidades.",
+                            totalOutput, qtyOk, qtyScrap, qtySecond, qtyRework, totalInput, diff));
         }
     }
 }

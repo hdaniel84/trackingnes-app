@@ -34,7 +34,9 @@ const productionStats = computed(() => {
 
     const qtyOk = props.item.quantity || 0;
     const qtyScrap = props.item.quantityScrap || 0;
-    const totalOutput = qtyOk + qtyScrap;
+    const qtySecond = props.item.quantitySecond || 0;
+    const qtyRework = props.item.quantityRework || 0;
+    const totalOutput = qtyOk + qtyScrap + qtySecond + qtyRework;
 
     // Calcular entrada total desde Sources (si existen)
     const sources = props.item.sources || [];
@@ -47,6 +49,8 @@ const productionStats = computed(() => {
     return {
         qtyOk,
         qtyScrap,
+        qtySecond,
+        qtyRework,
         totalOutput,
         totalInput,
         diff,
@@ -92,19 +96,38 @@ const productionStats = computed(() => {
                         <div class="text-center px-2">
                             <span class="block text-[10px] uppercase font-bold text-green-600 mb-0.5">OK</span>
                             <span class="text-xl font-bold text-surface-800 dark:text-surface-100">{{
-                                productionStats.qtyOk }}</span>
+                                productionStats.qtyOk
+                            }}</span>
                         </div>
+
+                        <div v-if="productionStats.qtySecond > 0" class="w-px h-8 bg-surface-200 dark:bg-surface-700">
+                        </div>
+                        <div v-if="productionStats.qtySecond > 0" class="text-center px-2">
+                            <span class="block text-[10px] uppercase font-bold text-blue-500 mb-0.5">2das.</span>
+                            <span class="text-xl font-bold">{{ productionStats.qtySecond }}</span>
+                        </div>
+
+                        <div v-if="productionStats.qtyRework > 0" class="w-px h-8 bg-surface-200 dark:bg-surface-700">
+                        </div>
+                        <div v-if="productionStats.qtyRework > 0" class="text-center px-2">
+                            <span class="block text-[10px] uppercase font-bold text-gray-500 mb-0.5">Rtq.</span>
+                            <span class="text-xl font-bold">{{ productionStats.qtyRework }}</span>
+                        </div>
+
+
                         <div class="w-px h-8 bg-surface-200 dark:bg-surface-700"></div>
                         <div class="text-center px-2">
                             <span class="block text-[10px] uppercase font-bold text-red-500 mb-0.5">NOK</span>
                             <span class="text-xl font-bold text-red-600 dark:text-red-400">{{ productionStats.qtyScrap
                                 }}</span>
                         </div>
+
                         <div class="w-px h-8 bg-surface-200 dark:bg-surface-700"></div>
                         <div class="text-center px-2">
                             <span class="block text-[10px] uppercase font-bold text-surface-500 mb-0.5">TOTAL</span>
                             <span class="text-xl font-bold text-surface-900 dark:text-surface-0">{{
-                                productionStats.totalOutput }}</span>
+                                productionStats.totalOutput
+                            }}</span>
                         </div>
                     </div>
                 </div>

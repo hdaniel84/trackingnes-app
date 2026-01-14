@@ -69,6 +69,10 @@ const showRawMaterials = computed(() => {
   return !currentRules.value?.hideRawMaterials;
 });
 
+const showSecondQuantiy = computed(() => {
+  return currentRules.value?.showSecondQuantiy;
+});
+
 // 3. VEE-VALIDATE SETUP
 const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta, values: formValues, submitCount } = useForm({
   validationSchema: toTypedSchema(props.validationSchema),
@@ -86,7 +90,9 @@ const { handleSubmit, errors, setValues, isSubmitting, resetForm, meta, values: 
     sources: [],
     product: null,
     quantity: null,
-    quantityScrap: null
+    quantityScrap: null,
+    quantitySecond: null,
+    quantityRework: null
   }
 });
 
@@ -144,6 +150,8 @@ const { value: shift } = useField('shift');
 //const { value: equipment } = useField('equipment');
 const { value: quantity } = useField('quantity');
 const { value: quantityScrap } = useField('quantityScrap');
+const { value: quantitySecond } = useField('quantitySecond');
+const { value: quantityRework } = useField('quantityRework');
 const { value: parameters } = useField('parameters');
 const { value: rawMaterials } = useField('rawMaterials');
 const { value: auxiliaryEquipmentIds } = useField('auxiliaryEquipmentIds');
@@ -186,6 +194,8 @@ watch(() => props.item, async (val) => {
         comments: val.comments,
         quantity: val.quantity,
         quantityScrap: val.quantityScrap,
+        quantitySecond: val.quantitySecond,
+        quantityRework: val.quantityRework,
         product: val.product || null,
         team: val.team || null,
         shift: val.shift || null,
@@ -217,7 +227,7 @@ watch(phaseId, async (newId) => {
 }, { immediate: true });
 
 // Validaciones de cantidades
-const totalProduced = computed(() => (quantity.value || 0) + (quantityScrap.value || 0));
+const totalProduced = computed(() => (quantity.value || 0) + (quantityScrap.value || 0) + (quantitySecond.value || 0) + (quantityRework.value || 0));
 const totalInput = computed(() => (sources.value || []).reduce((acc, item) => acc + (Number(item.quantityUsed) || 0), 0));
 
 const massBalanceAlert = computed(() => {
@@ -256,6 +266,8 @@ const executeSave = async (values) => {
       auxiliaryEquipmentIds: values.auxiliaryEquipmentIds,
       sources: values.sources,
       quantityScrap: values.quantityScrap ?? 0,
+      quantitySecond: values.quantitySecond ?? 0,
+      quantityRework: values.quantityRework ?? 0,
       rawMaterials: rawMaterialsPayload,
       parameters: parametersPayload
     };
@@ -274,7 +286,13 @@ const executeSave = async (values) => {
           parameters: [],
           rawMaterials: values.rawMaterials,
           auxiliaryEquipmentIds: [],
-          quantity: null, comments: null, endTime: null, sources: [], quantityScrap: null
+          quantity: null, 
+          comments: null, 
+          endTime: null, 
+          sources: [], 
+          quantityScrap: null,
+          quantitySecond: null,
+          quantityRework: null
         }
       });
       showSourceSelect.value = true;
@@ -420,15 +438,36 @@ const onSubmit = handleSubmit(async (values) => {
                 </span>
               </div>
 
-              <div class="grid grid-cols-3 gap-4 mb-4">
+              <div class="grid grid-cols-5 gap-4 mb-4">
 
                 <div class="col-span-1">
                   <label class="block text-[10px] uppercase font-bold text-green-600 mb-1.5 ml-1">
                     <i class="pi pi-check-circle"></i> Qtd. OK (Boa)
                   </label>
-                  <InputNumber v-model="quantity" fluid :useGrouping="false" placeholder="0" suffix=" un."
+                  <InputNumber v-model="quantity" fluid :useGrouping="false" :min="0" placeholder="0" suffix=" un."
                     inputClass="font-bold text-green-700 dark:text-green-400" class="w-full" />
                 </div>
+
+
+                <template v-if="showSecondQuantiy">
+                  <div class="col-span-1">
+                    <label class="block text-[10px] uppercase font-bold text-blue-600 mb-1.5 ml-1">
+                      <i class="pi pi-chevron-circle-down"></i> Segundas
+                    </label>
+                    <InputNumber v-model="quantitySecond" :min="0" placeholder="0" suffix=" un."
+                    inputClass="font-bold text-green-700 dark:text-green-400" class="w-full" />
+                  </div>
+
+                  <div class="col-span-1">
+                    <label class="block text-[10px] uppercase font-bold text-gray-600 mb-1.5 ml-1">
+                      <i class="pi pi-exclamation-circle"></i> Retoque
+                    </label>
+                    <InputNumber v-model="quantityRework" :min="0" placeholder="0" suffix=" un."
+                    inputClass="font-bold text-green-700 dark:text-green-400" class="w-full" />
+                  </div>
+                </template>
+
+
 
                 <div class="col-span-1">
                   <label class="block text-[10px] uppercase font-bold text-red-500 mb-1.5 ml-1">

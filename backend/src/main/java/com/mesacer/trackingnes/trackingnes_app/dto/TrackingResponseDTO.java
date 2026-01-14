@@ -18,6 +18,8 @@ public class TrackingResponseDTO {
     private Integer quantity;
     private Integer quantityScrap;
     private Integer remainingQuantity;
+    private Integer quantitySecond;
+    private Integer quantityRework;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
@@ -37,10 +39,10 @@ public class TrackingResponseDTO {
     // Clase interna para resumir la composición sin exponer Entidades JPA
     @Data
     public static class SourceSummaryDTO {
-        private Long trackingId; 
+        private Long trackingId;
         private String productCode;
         private String productDescription;
-        private Double quantityUsed; 
+        private Double quantityUsed;
         private Integer remainingQuantity;
     }
 

@@ -162,7 +162,7 @@ onMounted(() => {
     <div class="w-full animate-fade-in p-4">
         
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-35">
                 <div v-if="loading">
                     <Skeleton shape="circle" size="3rem" />
                 </div>

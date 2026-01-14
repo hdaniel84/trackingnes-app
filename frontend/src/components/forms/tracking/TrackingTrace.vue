@@ -123,6 +123,7 @@ watch(() => props.visible, (val) => {
                         <div class="flex flex-col text-left rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 w-[240px] bg-white dark:bg-surface-800 border-l-4 relative group overflow-hidden"
                             :class="[
                                 { 'rotate-180': isInverted },
+                                (slotProps.node.data.id == props.trackingId) ? 'node-selected' : '',
                                 slotProps.node.data.quantityScrap > 0 ? 'border-l-red-500 border-y border-r border-y-red-100 border-r-red-100 dark:border-red-900/50' : 'border-l-primary-500 border-y border-r border-surface-200 dark:border-surface-700'
                             ]">
                             <div
@@ -220,5 +221,18 @@ watch(() => props.visible, (val) => {
 .dark :deep(.p-organizationchart .p-organizationchart-line-left),
 .dark :deep(.p-organizationchart .p-organizationchart-line-right) {
     border-color: var(--surface-600) !important;
+}
+
+.node-selected {
+    border: 3px solid var(--p-primary-color) !important;
+    background-color:var(--color-blue-100) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    z-index: 10;
+}
+
+/* Modo oscuro */
+.dark .node-selected {
+    background-color: var(--color-blue-900) !important;
+    border-color: var(--primary-400) !important;
 }
 </style>
